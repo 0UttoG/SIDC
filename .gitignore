@@ -1,0 +1,19 @@
+# --- BACKEND (Spring Boot) ---
+backend/target/
+backend/.mvn/
+backend/*.jar
+backend/.gradle/
+backend/build/
+
+# --- FRONTEND (Angular) ---
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/tmp/
+
+# --- IDEs y Sistema ---
+.vscode/
+.idea/
+*.swp
+*.log
+.DS_Store
