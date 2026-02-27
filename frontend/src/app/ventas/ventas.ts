@@ -11,8 +11,8 @@ import { FormsModule } from '@angular/forms';
 export class Ventas {
   // Datos estáticos
   clientes = [
-    { id: 1, nombre: 'Supermercado El Sol', canal: 'Supermercado', limite_credito: 5000.00, saldo_actual: 1500.00 },
-    { id: 2, nombre: 'Farmacia Salud', canal: 'Farmacia', limite_credito: 800.00, saldo_actual: 0.00 }
+    { id: 1, nombre: 'Supermercado El Sol', canal: 'Supermercado', limite_credito: 5000.00, saldo_actual: 1500.00, id_ruta: 1 },
+    { id: 2, nombre: 'Farmacia Salud', canal: 'Farmacia', limite_credito: 800.00, saldo_actual: 0.00, id_ruta: 2 }
   ];
 
   productosInventario = [
@@ -25,8 +25,6 @@ export class Ventas {
   clienteVentaSeleccionado: any = null;
   carrito: any[] = [];
   esCredito: boolean = false;
-
-  seleccionarCliente(cliente: any) { this.clienteVentaSeleccionado = cliente; }
 
   agregarAlCarrito(producto: any) {
     if (producto.stock_actual <= 0) { alert('Error: Sin stock.'); return; }
@@ -52,5 +50,43 @@ export class Ventas {
     }
     alert('¡Venta facturada exitosamente!');
     this.carrito = []; this.clienteVentaSeleccionado = null; this.esCredito = false;
+  }
+
+  // ==========================================
+  // LÓGICA DE CLIENTES (CRUD - Crear)
+  // ==========================================
+  mostrarModalCliente: boolean = false;
+  nuevoCliente: any = { nombre: '', telefono: '', canal: '', limite_credito: null, id_ruta: 1 };
+
+  abrirModalCliente() { this.mostrarModalCliente = true; }
+  cerrarModalCliente() { 
+    this.mostrarModalCliente = false; 
+    this.nuevoCliente = { nombre: '', telefono: '', canal: '', limite_credito: null, id_ruta: 1 }; 
+  }
+
+  guardarCliente() {
+    if (!this.nuevoCliente.nombre || !this.nuevoCliente.canal || this.nuevoCliente.limite_credito === null) {
+      alert('Por favor llena el nombre, canal y límite de crédito.');
+      return;
+    }
+
+    // Creamos el objeto del cliente (Simulando lo que hará Supabase)
+    const clienteCreado = {
+      id: Math.floor(Math.random() * 1000), // ID Temporal
+      nombre: this.nuevoCliente.nombre,
+      canal: this.nuevoCliente.canal,
+      limite_credito: this.nuevoCliente.limite_credito,
+      saldo_actual: 0.00, // Un cliente nuevo empieza sin deudas
+      id_ruta: this.nuevoCliente.id_ruta
+    };
+
+    // Lo agregamos a la lista
+    this.clientes.push(clienteCreado);
+
+    // ¡Truco de UX! Auto-seleccionamos el cliente para que puedan facturar de un solo
+    this.clienteVentaSeleccionado = clienteCreado;
+
+    alert('¡Cliente creado exitosamente!');
+    this.cerrarModalCliente();
   }
 }
