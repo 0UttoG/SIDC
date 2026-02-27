@@ -25,11 +25,12 @@ export class Ventas implements OnInit {
 
   mostrarModalCliente: boolean = false;
   
-  // Agregamos 'correo' al objeto inicial tal como pidió Nestor
+  // Agregamos 'direccion' y 'correo' al objeto inicial
   nuevoCliente: any = { 
     nombre: '', 
+    direccion: '', // <--- AGREGADO
     telefono: '', 
-    correo: '', // <--- CAMBIO AQUÍ
+    correo: '', 
     canal: '', 
     limiteCredito: null, 
     idRuta: 1 
@@ -56,21 +57,22 @@ export class Ventas implements OnInit {
   
   cerrarModalCliente() { 
     this.mostrarModalCliente = false; 
-    // Limpiamos el objeto incluyendo el correo
-    this.nuevoCliente = { nombre: '', telefono: '', correo: '', canal: '', limiteCredito: null, idRuta: 1 }; 
+    // Limpiamos el objeto con todos los campos nuevos
+    this.nuevoCliente = { nombre: '', direccion: '', telefono: '', correo: '', canal: '', limiteCredito: null, idRuta: 1 }; 
   }
 
   guardarCliente() {
-    // Agregamos la validación del correo para que sea obligatorio
-    if (!this.nuevoCliente.nombre || !this.nuevoCliente.canal || !this.nuevoCliente.correo || this.nuevoCliente.limiteCredito === null) {
-      alert('Por favor llena el nombre, canal, correo y límite de crédito.'); return;
+    // Validación actualizada para incluir dirección
+    if (!this.nuevoCliente.nombre || !this.nuevoCliente.direccion || !this.nuevoCliente.canal || !this.nuevoCliente.correo || this.nuevoCliente.limiteCredito === null) {
+      alert('Por favor llena el nombre, dirección, canal, correo y límite de crédito.'); return;
     }
 
-    // Armamos el JSON incluyendo el campo 'correo' para que Nestor lo reciba
+    // Armamos el JSON incluyendo 'direccion' para Nestor
     const clienteDTO = {
       nombre: this.nuevoCliente.nombre,
+      direccion: this.nuevoCliente.direccion, // <--- AGREGADO
       telefono: this.nuevoCliente.telefono,
-      correo: this.nuevoCliente.correo, // <--- CAMBIO AQUÍ
+      correo: this.nuevoCliente.correo,
       idRuta: Number(this.nuevoCliente.idRuta),
       limiteCredito: this.nuevoCliente.limiteCredito,
       canal: this.nuevoCliente.canal
