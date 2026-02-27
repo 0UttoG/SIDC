@@ -1,6 +1,8 @@
 package com.SIDC.backend.entities;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.math.BigDecimal;
 
 @Entity
@@ -24,8 +26,11 @@ public class Cliente {
     @Column(name = "saldo_actual")
     private BigDecimal saldoActual = BigDecimal.ZERO;
 
+    // ¡Esta es la magia para que PostgreSQL lo acepte!
+// Dentro de Cliente.java
     @Enumerated(EnumType.STRING)
-    @Column(name = "canal")
+    @Column(name = "canal", columnDefinition = "tipo_canal") // Forzamos el tipo de la BD
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM) // Esto es clave para Hibernate 6+
     private TipoCanal canal;
 
     public Cliente() {}

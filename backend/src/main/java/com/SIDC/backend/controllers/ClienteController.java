@@ -2,6 +2,7 @@ package com.SIDC.backend.controllers;
 
 import com.SIDC.backend.entities.Cliente;
 import com.SIDC.backend.repositories.ClienteRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,10 +22,9 @@ public class ClienteController {
 
     // Endpoint para Crear Cliente
     @PostMapping
+    @Transactional // Asegúrate de importar org.springframework.transaction.annotation.Transactional
     public ResponseEntity<Cliente> crearCliente(@RequestBody Cliente cliente) {
-        // Al guardar, el ID se generará automáticamente y el saldo_actual iniciará en 0.00
-        Cliente nuevoCliente = clienteRepository.save(cliente);
-        return new ResponseEntity<>(nuevoCliente, HttpStatus.CREATED);
+        return new ResponseEntity<>(clienteRepository.save(cliente), HttpStatus.CREATED);
     }
 
     // Endpoint extra de regalo: Listar Clientes (Tu compañero lo necesitará para el select de Angular)

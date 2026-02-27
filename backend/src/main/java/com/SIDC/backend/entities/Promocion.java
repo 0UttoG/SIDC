@@ -1,6 +1,8 @@
 package com.SIDC.backend.entities;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -23,14 +25,15 @@ public class Promocion {
     @Column(name = "fecha_fin")
     private LocalDate fechaFin;
 
+    // ¡Aplicamos la misma solución aquí!
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "canal_objetivo")
     private TipoCanal canalObjetivo;
 
     public Promocion() {}
 
     // --- GETTERS Y SETTERS ---
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
