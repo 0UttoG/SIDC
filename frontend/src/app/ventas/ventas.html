@@ -1,0 +1,52 @@
+<div class="p-8 flex gap-6 h-full">
+  <div class="w-2/3 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+    <div class="p-6 border-b border-gray-100">
+      <input type="text" placeholder="Buscar producto por nombre..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-3 focus:outline-none focus:border-[#9400d3] transition-colors">
+    </div>
+    <div class="p-6 overflow-y-auto flex-1">
+      <div *ngFor="let prod of productosInventario" class="flex justify-between items-center p-4 mb-3 border border-gray-100 rounded-xl hover:shadow-md transition-shadow">
+        <div>
+          <h4 class="font-bold text-gray-900">{{ prod.nombre }}</h4>
+          <p class="text-sm text-gray-500">Lote: {{ prod.id_lote }} | Vence: {{ prod.vencimiento }}</p>
+          <p class="text-sm font-semibold mt-1" [ngClass]="{'text-green-600': prod.stock_actual > 10, 'text-red-500': prod.stock_actual <= 10}">Stock: {{ prod.stock_actual }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-lg font-black text-gray-900 mb-2">${{ prod.precio_base }}</p>
+          <button (click)="agregarAlCarrito(prod)" class="px-4 py-2 bg-[#9400d3]/10 text-[#9400d3] font-bold rounded-lg hover:bg-[#9400d3] hover:text-white transition-colors">Agregar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="w-1/3 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+    <div class="p-6 border-b border-gray-100 bg-gray-50 rounded-t-2xl">
+      <label class="block text-sm font-bold text-gray-700 mb-2">Seleccionar Cliente</label>
+      <select (change)="seleccionarCliente(clientes[$any($event.target).value])" class="w-full border-gray-200 rounded-lg p-2.5 focus:border-[#9400d3] outline-none">
+        <option value="" disabled selected>-- Elija un cliente --</option>
+        <option *ngFor="let c of clientes; let i = index" [value]="i">{{ c.nombre }}</option>
+      </select>
+      <div *ngIf="clienteVentaSeleccionado" class="mt-3 text-sm">
+        <span class="block text-gray-500">Límite Crédito: <strong class="text-gray-800">${{ clienteVentaSeleccionado.limite_credito }}</strong></span>
+      </div>
+    </div>
+    <div class="p-6 flex-1 overflow-y-auto">
+      <h3 class="font-bold text-gray-800 mb-4">Detalle de Venta</h3>
+      <div *ngIf="carrito.length === 0" class="text-center text-gray-400 py-8">Carrito vacío</div>
+      <div *ngFor="let item of carrito; let i = index" class="flex justify-between items-center mb-4 pb-4 border-b border-gray-50">
+        <div><p class="font-bold text-sm text-gray-800">{{ item.nombre }}</p><p class="text-xs text-gray-500">{{ item.cantidad }} x ${{ item.precio_base }}</p></div>
+        <div class="flex items-center space-x-3"><span class="font-black text-sm text-gray-900">${{ item.subtotal | number:'1.2-2' }}</span><button (click)="eliminarDelCarrito(i)" class="text-red-400 hover:text-red-600 font-bold">X</button></div>
+      </div>
+    </div>
+    <div class="p-6 bg-gray-50 rounded-b-2xl border-t border-gray-100">
+      <div class="flex items-center space-x-2 mb-4">
+        <input type="checkbox" id="credito" [(ngModel)]="esCredito" class="accent-[#9400d3]">
+        <label for="credito" class="text-sm font-bold text-gray-700">Facturar a Crédito</label>
+      </div>
+      <div class="flex justify-between items-center mb-6">
+        <span class="font-bold text-gray-500">Total:</span>
+        <span class="text-3xl font-black text-[#9400d3]">${{ totalVenta | number:'1.2-2' }}</span>
+      </div>
+      <button (click)="facturar()" class="w-full py-4 bg-[#9400d3] text-white font-black rounded-xl hover:bg-violet-800 transition-colors shadow-md">Confirmar y Facturar</button>
+    </div>
+  </div>
+</div>
