@@ -24,7 +24,6 @@
       <div class="flex justify-between items-end mb-2">
         <label class="block text-sm font-bold text-gray-700">Seleccionar Cliente</label>
         <button (click)="abrirModalCliente()" class="text-xs font-bold text-[#9400d3] hover:underline flex items-center">
-          <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
           Nuevo Cliente
         </button>
       </div>
@@ -35,8 +34,7 @@
       </select>
       
       <div *ngIf="clienteVentaSeleccionado" class="mt-3 text-sm bg-white p-3 rounded-lg border border-gray-100">
-        <span class="block text-gray-500 mb-1">Límite Crédito: <strong class="text-gray-800">${{ clienteVentaSeleccionado.limite_credito | number:'1.2-2' }}</strong></span>
-        <span class="block text-gray-500">Saldo Pendiente: <strong class="text-gray-800" [ngClass]="{'text-red-500': clienteVentaSeleccionado.saldo_actual > 0}">${{ clienteVentaSeleccionado.saldo_actual | number:'1.2-2' }}</strong></span>
+        <span class="block text-gray-500 mb-1">Límite Crédito: <strong class="text-gray-800">${{ clienteVentaSeleccionado.limiteCredito | number:'1.2-2' }}</strong></span>
       </div>
     </div>
 
@@ -94,11 +92,11 @@
         <div class="grid grid-cols-2 gap-5">
           <div>
             <label class="block text-sm font-bold text-gray-700 mb-1">Límite de Crédito ($)</label>
-            <input type="number" [(ngModel)]="nuevoCliente.limite_credito" placeholder="0.00" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
+            <input type="number" [(ngModel)]="nuevoCliente.limiteCredito" placeholder="0.00" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
           </div>
           <div>
             <label class="block text-sm font-bold text-gray-700 mb-1">Ruta Asignada</label>
-            <select [(ngModel)]="nuevoCliente.id_ruta" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
+            <select [(ngModel)]="nuevoCliente.idRuta" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
               <option value="1">Ruta 1 - Centro</option>
               <option value="2">Ruta 2 - Norte</option>
               <option value="3">Ruta 3 - Sur</option>
