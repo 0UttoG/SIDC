@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { VentasService, VentaRequestDTO } from './ventas.service'; // <-- Importamos el nuevo servicio
 
 @Component({
   selector: 'app-ventas',
@@ -11,13 +12,13 @@ import { HttpClient } from '@angular/common/http';
 })
 export class Ventas implements OnInit {
   
+  private ventasService = inject(VentasService);
+  private http = inject(HttpClient);
+
   clientes: any[] = []; 
   
-  productosInventario = [
-    { id_producto: 1, id_lote: '101', id_bodega: 1, nombre: 'Arroz Premium 5kg', precio_base: 6.50, stock_actual: 50, vencimiento: '2026-12-01' },
-    { id_producto: 2, id_lote: '102', id_bodega: 1, nombre: 'Aceite Vegetal 1L', precio_base: 2.25, stock_actual: 5, vencimiento: '2026-05-15' },
-    { id_producto: 3, id_lote: '103', id_bodega: 1, nombre: 'Frijol Rojo 1kg', precio_base: 1.80, stock_actual: 120, vencimiento: '2026-03-10' }
-  ];
+  // ¡Se fueron los datos quemados! Ahora arranca vacío y se llena del backend
+  productosInventario: any[] = []; 
 
   clienteVentaSeleccionado: any = null;
   carrito: any[] = [];
@@ -25,31 +26,44 @@ export class Ventas implements OnInit {
 
   mostrarModalCliente: boolean = false;
   
-  // Agregamos 'direccion' y 'correo' al objeto inicial
   nuevoCliente: any = { 
-    nombre: '', 
-    direccion: '', // <--- AGREGADO
-    telefono: '', 
-    correo: '', 
-    canal: '', 
-    limiteCredito: null, 
-    idRuta: 1 
+    nombre: '', direccion: '', telefono: '', correo: '', canal: '', limiteCredito: null, idRuta: 1 
   };
-
-  constructor(private http: HttpClient) {}
 
   ngOnInit() {
     this.cargarClientes();
+    this.cargarCatalogoReal(); // <-- Ejecutamos la carga de productos al entrar
   }
 
+  // ==========================================
+  // PASO 1: Obtener el Catálogo Real
+  // ==========================================
+  cargarCatalogoReal() {
+    this.ventasService.getCatalogo().subscribe({
+      next: (data) => {
+        // Adaptamos el DTO de Nestor a los nombres que usa tu HTML
+        this.productosInventario = data.map(p => ({
+          id_bodega: p.idBodega,
+          id_producto: p.idProducto,
+          id_lote: p.idLote, 
+          lote_display: p.lote,
+          nombre: p.nombre,
+          precio_base: p.precio,
+          stock_actual: p.stock,
+          vencimiento: p.vencimiento
+        }));
+      },
+      error: (err) => console.error('Error cargando el catálogo:', err)
+    });
+  }
+
+  // ==========================================
+  // LÓGICA DE CLIENTES (Se mantiene intacta)
+  // ==========================================
   cargarClientes() {
     this.http.get<any[]>('http://localhost:8080/api/clientes').subscribe({
-      next: (data) => {
-        this.clientes = data;
-      },
-      error: (err) => {
-        console.error('El backend no está encendido o hay un error:', err);
-      }
+      next: (data) => this.clientes = data,
+      error: (err) => console.error('Error cargando clientes:', err)
     });
   }
 
@@ -57,20 +71,17 @@ export class Ventas implements OnInit {
   
   cerrarModalCliente() { 
     this.mostrarModalCliente = false; 
-    // Limpiamos el objeto con todos los campos nuevos
     this.nuevoCliente = { nombre: '', direccion: '', telefono: '', correo: '', canal: '', limiteCredito: null, idRuta: 1 }; 
   }
 
   guardarCliente() {
-    // Validación actualizada para incluir dirección
     if (!this.nuevoCliente.nombre || !this.nuevoCliente.direccion || !this.nuevoCliente.canal || !this.nuevoCliente.correo || this.nuevoCliente.limiteCredito === null) {
       alert('Por favor llena el nombre, dirección, canal, correo y límite de crédito.'); return;
     }
 
-    // Armamos el JSON incluyendo 'direccion' para Nestor
     const clienteDTO = {
       nombre: this.nuevoCliente.nombre,
-      direccion: this.nuevoCliente.direccion, // <--- AGREGADO
+      direccion: this.nuevoCliente.direccion,
       telefono: this.nuevoCliente.telefono,
       correo: this.nuevoCliente.correo,
       idRuta: Number(this.nuevoCliente.idRuta),
@@ -84,17 +95,13 @@ export class Ventas implements OnInit {
         this.cargarClientes(); 
         this.cerrarModalCliente();
       },
-      error: (err) => {
-        if (err.status === 400 && err.error && err.error.mensaje) {
-          alert('Error: ' + err.error.mensaje);
-        } else {
-          alert('Error de conexión con el servidor.');
-        }
-      }
+      error: (err) => alert('Error al guardar cliente.')
     });
   }
 
-  // Lógica del Carrito
+  // ==========================================
+  // LÓGICA DEL CARRITO
+  // ==========================================
   agregarAlCarrito(producto: any) {
     if (producto.stock_actual <= 0) { alert('Error: Sin stock.'); return; }
     const itemExistente = this.carrito.find(item => item.id_producto === producto.id_producto);
@@ -111,14 +118,18 @@ export class Ventas implements OnInit {
   eliminarDelCarrito(index: number) { this.carrito.splice(index, 1); }
   get totalVenta() { return this.carrito.reduce((acc, item) => acc + item.subtotal, 0); }
 
+  // ==========================================
+  // PASO 2: Procesar la Facturación Real
+  // ==========================================
   facturar() {
     if (!this.clienteVentaSeleccionado || this.carrito.length === 0) { 
       alert('Selecciona cliente y productos.'); return; 
     }
 
-    const ventaRequest = {
-      idCliente: this.clienteVentaSeleccionado.id,
-      idVendedor: 1, 
+    // Armamos el objeto exacto que Nestor pidió
+    const ventaRequest: VentaRequestDTO = {
+      idCliente: this.clienteVentaSeleccionado.id || this.clienteVentaSeleccionado.id_cliente,
+      idVendedor: 1, // Vendedor genérico o asigando a la ruta
       idRuta: this.clienteVentaSeleccionado.idRuta || 1,
       esCredito: this.esCredito,
       detalles: this.carrito.map(item => ({
@@ -130,19 +141,18 @@ export class Ventas implements OnInit {
       }))
     };
 
-    this.http.post('http://localhost:8080/api/ventas', ventaRequest).subscribe({
+    // Usamos el servicio que acabás de crear
+    this.ventasService.procesarVenta(ventaRequest).subscribe({
       next: (res) => {
-        alert('¡Factura registrada!');
+        alert('¡Factura registrada con éxito!');
         this.carrito = []; 
         this.clienteVentaSeleccionado = null; 
         this.esCredito = false;
+        this.cargarCatalogoReal(); // Recargamos para que el stock de la pantalla baje automáticamente
       },
       error: (err) => {
-        if (err.status === 400 && err.error && err.error.mensaje) {
-          alert('⛔ Error de Negocio: ' + err.error.mensaje);
-        } else {
-          alert('Error de conexión con el backend.');
-        }
+        // Aquí capturamos la "Violación de Ruta" o cualquier Trigger de la DB
+        alert('⛔ Error: ' + err.message);
       }
     });
   }
