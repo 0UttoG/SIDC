@@ -1,35 +1,48 @@
 <div class="p-8 h-full flex flex-col relative">
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
-    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-      <div>
-        <h2 class="text-lg font-bold text-gray-900">Listado de Existencias y Lotes</h2>
-        <p class="text-sm text-gray-500">Gestión de productos, control de fechas de caducidad y ajustes de bodega.</p>
-      </div>
-      <button (click)="abrirModalProducto()" class="px-5 py-2.5 bg-[#9400d3] text-white font-bold rounded-xl hover:bg-violet-800 transition-colors shadow-md">
-        + Nuevo Producto
-      </button>
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <h2 class="text-3xl font-black text-gray-800">Control de Inventario</h2>
+      <p class="text-gray-500 mt-1">Gestión de existencias, lotes y bodegas</p>
     </div>
+    <button (click)="abrirModalNuevo()" class="px-6 py-3 bg-[#9400d3] text-white font-bold rounded-xl shadow-md hover:bg-violet-800 transition-colors flex items-center">
+      <span class="text-xl mr-2">+</span> Registrar Lote
+    </button>
+  </div>
 
-    <div class="flex-1 overflow-y-auto p-6">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex-1 overflow-hidden flex flex-col">
+    <div class="overflow-y-auto flex-1 p-6">
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="text-gray-500 text-sm border-b-2 border-gray-200">
-            <th class="pb-3 font-bold">Producto</th><th class="pb-3 font-bold">Lote #</th><th class="pb-3 font-bold text-center">Stock Actual</th><th class="pb-3 font-bold">Vencimiento</th><th class="pb-3 font-bold">Estado</th><th class="pb-3 font-bold text-right">Acciones</th>
+            <th class="pb-3 font-bold">Producto</th>
+            <th class="pb-3 font-bold">Lote</th>
+            <th class="pb-3 font-bold text-center">Stock Actual</th>
+            <th class="pb-3 font-bold">Vencimiento</th>
+            <th class="pb-3 font-bold text-center">Estado</th>
+            <th class="pb-3 font-bold text-right">Acciones</th>
           </tr>
         </thead>
         <tbody class="text-sm">
+          <tr *ngIf="productosInventario.length === 0">
+            <td colspan="6" class="text-center py-8 text-gray-400">Cargando inventario o sin existencias...</td>
+          </tr>
           <tr *ngFor="let prod of productosInventario" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-            <td class="py-4 font-bold text-gray-900">{{ prod.nombre }}</td>
-            <td class="py-4 text-gray-600 font-mono">{{ prod.id_lote }}</td>
-            <td class="py-4 text-center"><span class="font-black text-lg" [ngClass]="{'text-red-500': prod.stock_actual <= 10, 'text-gray-800': prod.stock_actual > 10}">{{ prod.stock_actual }}</span></td>
+            <td class="py-4 font-bold text-gray-800">{{ prod.producto }}</td>
+            <td class="py-4 font-mono text-gray-500">{{ prod.lote }}</td>
+            <td class="py-4 text-center font-black text-lg" [ngClass]="{'text-red-500': prod.stockActual <= 10, 'text-green-600': prod.stockActual > 10}">{{ prod.stockActual }}</td>
             <td class="py-4 text-gray-600">{{ prod.vencimiento }}</td>
-            <td class="py-4">
-              <span *ngIf="prod.estado === 'Bueno'" class="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-bold text-xs">Stock Óptimo</span>
-              <span *ngIf="prod.estado === 'Bajo Stock'" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg font-bold text-xs">Bajo Stock</span>
-              <span *ngIf="prod.estado === 'Por Vencer'" class="px-3 py-1 bg-red-100 text-red-700 rounded-lg font-bold text-xs">Próximo a Vencer</span>
+            <td class="py-4 text-center">
+              <span class="px-3 py-1 rounded-lg font-bold text-xs" 
+                    [ngClass]="{
+                      'bg-green-100 text-green-700': prod.estado === 'Stock Óptimo',
+                      'bg-yellow-100 text-yellow-700': prod.estado === 'Bajo Stock',
+                      'bg-red-100 text-red-700': prod.estado === 'Vencido'
+                    }">
+                {{ prod.estado || 'Normal' }}
+              </span>
             </td>
             <td class="py-4 text-right">
-              <button (click)="abrirModalAjuste(prod)" class="text-[#9400d3] font-bold hover:underline">Ajustar Stock</button>
+              <button (click)="abrirModalAjuste(prod)" class="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 transition-colors">Ajustar Stock</button>
             </td>
           </tr>
         </tbody>
@@ -37,53 +50,57 @@
     </div>
   </div>
 
-  <div *ngIf="mostrarModalProducto" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl shadow-2xl w-[500px] overflow-hidden flex flex-col border border-gray-100">
-      <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+  <div *ngIf="mostrarModalNuevo" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-[500px] overflow-hidden flex flex-col">
+      <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
         <h2 class="text-xl font-black text-[#9400d3]">Registrar Nuevo Lote</h2>
-        <button (click)="cerrarModalProducto()" class="text-gray-400 hover:text-red-500 font-bold">X</button>
+        <button (click)="cerrarModalNuevo()" class="text-gray-400 hover:text-red-500 font-bold">X</button>
       </div>
-      <div class="p-6 space-y-5">
-        <div><label class="block text-sm font-bold text-gray-700 mb-1">Nombre</label><input type="text" [(ngModel)]="nuevoProducto.nombre" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#9400d3]/50"></div>
-        <div class="grid grid-cols-2 gap-5">
-          <div><label class="block text-sm font-bold text-gray-700 mb-1">Lote</label><input type="text" [(ngModel)]="nuevoProducto.id_lote" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none"></div>
-          <div><label class="block text-sm font-bold text-gray-700 mb-1">Precio</label><input type="number" [(ngModel)]="nuevoProducto.precio_base" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none"></div>
+      <div class="p-6 space-y-4">
+        <div><label class="block text-sm font-bold text-gray-700 mb-1">Nombre del Producto</label><input type="text" [(ngModel)]="nuevoProducto.nombre" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#9400d3]/50"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-bold text-gray-700 mb-1">Código Lote</label><input type="text" [(ngModel)]="nuevoProducto.lote" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#9400d3]/50"></div>
+          <div><label class="block text-sm font-bold text-gray-700 mb-1">Precio Unitario ($)</label><input type="number" [(ngModel)]="nuevoProducto.precio" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#9400d3]/50"></div>
         </div>
-        <div class="grid grid-cols-2 gap-5">
-          <div><label class="block text-sm font-bold text-gray-700 mb-1">Stock</label><input type="number" [(ngModel)]="nuevoProducto.stock_actual" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none"></div>
-          <div><label class="block text-sm font-bold text-gray-700 mb-1">Vence</label><input type="date" [(ngModel)]="nuevoProducto.vencimiento" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-bold text-gray-700 mb-1">Stock Inicial</label><input type="number" [(ngModel)]="nuevoProducto.stock" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#9400d3]/50"></div>
+          <div><label class="block text-sm font-bold text-gray-700 mb-1">Fecha Vencimiento</label><input type="date" [(ngModel)]="nuevoProducto.vencimiento" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#9400d3]/50"></div>
         </div>
       </div>
-      <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end space-x-3">
-        <button (click)="cerrarModalProducto()" class="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
-        <button (click)="guardarProducto()" class="px-5 py-2.5 bg-[#9400d3] text-white font-bold rounded-xl shadow-md">Guardar</button>
+      <div class="p-6 bg-gray-50 flex justify-end space-x-3">
+        <button (click)="cerrarModalNuevo()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
+        <button (click)="guardarProducto()" class="px-5 py-2 bg-[#9400d3] text-white font-bold rounded-xl">Guardar Lote</button>
       </div>
     </div>
   </div>
 
   <div *ngIf="mostrarModalAjuste" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl shadow-2xl w-[400px] overflow-hidden flex flex-col border border-gray-100">
-      <div class="p-6 border-b border-gray-100 bg-gray-50">
-        <h2 class="text-xl font-black text-[#9400d3]">Movimiento de Inventario</h2>
-        <p class="text-sm text-gray-500 mt-1">Lote: {{ productoAAjustar?.id_lote }} | {{ productoAAjustar?.nombre }}</p>
+    <div class="bg-white rounded-2xl shadow-2xl w-[400px] overflow-hidden flex flex-col">
+      <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+        <h2 class="text-xl font-black text-[#9400d3]">Ajuste de Stock</h2>
+        <button (click)="cerrarModalAjuste()" class="text-gray-400 hover:text-red-500 font-bold">X</button>
       </div>
-      <div class="p-6 space-y-5">
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">Tipo de Movimiento</label>
-          <div class="flex space-x-4">
-            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="tipo" value="entrada" [(ngModel)]="tipoMovimiento" class="accent-[#9400d3]"><span class="text-sm font-bold text-green-600">Entrada (+)</span></label>
-            <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="tipo" value="salida" [(ngModel)]="tipoMovimiento" class="accent-[#9400d3]"><span class="text-sm font-bold text-red-600">Salida (-)</span></label>
-          </div>
+      <div class="p-6 space-y-4">
+        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
+          <p class="text-gray-500">Producto: <strong class="text-gray-800">{{ productoSeleccionado?.producto }}</strong></p>
+          <p class="text-gray-500">Lote: <strong class="text-gray-800">{{ productoSeleccionado?.lote }}</strong></p>
+          <p class="text-gray-500">Stock Actual: <strong class="text-gray-800">{{ productoSeleccionado?.stockActual }}</strong></p>
         </div>
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-1">Cantidad a ajustar</label>
-          <input type="number" [(ngModel)]="cantidadAjuste" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 outline-none text-lg font-black text-center focus:ring-2 focus:ring-[#9400d3]/50">
-          <p class="text-xs text-gray-500 mt-2 text-center">Stock actual disponible: {{ productoAAjustar?.stock_actual }}</p>
+          <label class="block text-sm font-bold text-gray-700 mb-1">Tipo de Movimiento</label>
+          <select [(ngModel)]="ajuste.tipoMovimiento" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
+            <option value="Entrada">Entrada (+)</option>
+            <option value="Salida">Salida (-)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">Cantidad a Ajustar</label>
+          <input type="number" [(ngModel)]="ajuste.cantidad" placeholder="0" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
         </div>
       </div>
-      <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end space-x-3">
-        <button (click)="cerrarModalAjuste()" class="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
-        <button (click)="guardarAjuste()" class="px-5 py-2.5 bg-[#9400d3] text-white font-bold rounded-xl shadow-md">Aplicar Ajuste</button>
+      <div class="p-6 bg-gray-50 flex justify-end space-x-3">
+        <button (click)="cerrarModalAjuste()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-xl">Cancelar</button>
+        <button (click)="guardarAjuste()" class="px-5 py-2 bg-[#9400d3] text-white font-bold rounded-xl">Aplicar Ajuste</button>
       </div>
     </div>
   </div>
