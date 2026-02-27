@@ -2,28 +2,44 @@ package com.SIDC.backend.services;
 
 import com.SIDC.backend.dto.VentaDetalleRequestDTO;
 import com.SIDC.backend.dto.VentaRequestDTO;
+import com.SIDC.backend.entities.Cliente;
+import com.SIDC.backend.entities.Promocion;
 import com.SIDC.backend.entities.Venta;
 import com.SIDC.backend.entities.VentaDetalle;
+import com.SIDC.backend.repositories.ClienteRepository;
+import com.SIDC.backend.repositories.PromocionRepository;
 import com.SIDC.backend.repositories.VentaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Optional;
 
 @Service
 public class VentaService {
 
     private final VentaRepository ventaRepository;
     private final EmailService emailService;
+    private final ClienteRepository clienteRepository;
+    private final PromocionRepository promocionRepository;
 
-    // Inyección de dependencias por constructor
-    public VentaService(VentaRepository ventaRepository, EmailService emailService) {
+    // ¡Aquí está la magia! El constructor ahora recibe los 4 servicios
+    public VentaService(VentaRepository ventaRepository, EmailService emailService,
+                        ClienteRepository clienteRepository, PromocionRepository promocionRepository) {
         this.ventaRepository = ventaRepository;
         this.emailService = emailService;
+        this.clienteRepository = clienteRepository;
+        this.promocionRepository = promocionRepository;
     }
 
     @Transactional
     public Venta procesarVenta(VentaRequestDTO request) {
+        Cliente cliente = clienteRepository.findById(request.idCliente())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+
+        Optional<Promocion> promoOpt = promocionRepository.buscarPromocionActiva(cliente.getCanal(), LocalDate.now());
+
         Venta venta = new Venta();
         venta.setIdCliente(request.idCliente());
         venta.setIdVendedor(request.idVendedor());
@@ -38,27 +54,28 @@ public class VentaService {
             detalle.setIdProducto(dto.idProducto());
             detalle.setIdLote(dto.idLote());
             detalle.setCantidad(dto.cantidad());
-            detalle.setPrecioUnitario(dto.precioUnitario());
 
-            // Relación bidireccional
+            BigDecimal precioUnitario = dto.precioUnitario();
+
+            if (promoOpt.isPresent()) {
+                BigDecimal descuento = precioUnitario.multiply(
+                        promoOpt.get().getPorcentajeDescuento().divide(new BigDecimal(100), 2, java.math.RoundingMode.HALF_UP)
+                );
+            }
+
+            detalle.setPrecioUnitario(precioUnitario);
             detalle.setVenta(venta);
             venta.getDetalles().add(detalle);
 
-            // Calculamos el total en memoria para guardarlo en la cabecera
-            BigDecimal subtotal = dto.precioUnitario().multiply(new BigDecimal(dto.cantidad()));
+            BigDecimal subtotal = precioUnitario.multiply(new BigDecimal(dto.cantidad()));
             totalCalculado = totalCalculado.add(subtotal);
         }
 
         venta.setTotal(totalCalculado);
-
-        // Al hacer save(), JPA inserta la venta y en cascada los detalles.
-        // Si hay violación de stock o crédito, salta la excepción aquí y hace ROLLBACK.
         Venta ventaGuardada = ventaRepository.save(venta);
 
-        // Si llegamos a esta línea, la transacción en PostgreSQL fue un éxito.
-        // (Asumo que tu EmailService tiene un método así, ajusta el nombre si es necesario)
         emailService.enviarCorreo(
-                "cliente@correo.com", // Aquí luego puedes extraer el correo real del cliente
+                "cliente@correo.com",
                 "Comprobante de Venta SIDC",
                 "Su compra por un total de $" + ventaGuardada.getTotal() + " ha sido procesada exitosamente."
         );

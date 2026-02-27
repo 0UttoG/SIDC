@@ -7,18 +7,14 @@ import java.math.BigDecimal;
 @Table(name = "clientes")
 public class Cliente {
 
-    // --- Campos heredados de 'personas' ---
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String nombre;
-
     private String telefono;
-
     private Boolean activo = true;
 
-    // --- Campos propios de 'clientes' ---
     @Column(name = "id_ruta")
     private Long idRuta;
 
@@ -28,12 +24,34 @@ public class Cliente {
     @Column(name = "saldo_actual")
     private BigDecimal saldoActual = BigDecimal.ZERO;
 
-    // Usamos EnumType.STRING para que Java lo mande como texto a la BD
     @Enumerated(EnumType.STRING)
     @Column(name = "canal")
     private TipoCanal canal;
 
     public Cliente() {}
 
-    // ¡Recuerda generar los Getters y Setters aquí! (Alt + Insert en tu IDE)
+    // --- GETTERS Y SETTERS ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
+
+    public Boolean getActivo() { return activo; }
+    public void setActivo(Boolean activo) { this.activo = activo; }
+
+    public Long getIdRuta() { return idRuta; }
+    public void setIdRuta(Long idRuta) { this.idRuta = idRuta; }
+
+    public BigDecimal getLimiteCredito() { return limiteCredito; }
+    public void setLimiteCredito(BigDecimal limiteCredito) { this.limiteCredito = limiteCredito; }
+
+    public BigDecimal getSaldoActual() { return saldoActual; }
+    public void setSaldoActual(BigDecimal saldoActual) { this.saldoActual = saldoActual; }
+
+    public TipoCanal getCanal() { return canal; }
+    public void setCanal(TipoCanal canal) { this.canal = canal; }
 }

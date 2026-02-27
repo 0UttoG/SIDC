@@ -29,12 +29,33 @@ public class VentaDetalle {
     @Column(name = "precio_unitario")
     private BigDecimal precioUnitario;
 
-    // ¡Clave! Bloqueamos la inserción porque PostgreSQL lo calcula automáticamente
     @Column(name = "subtotal", insertable = false, updatable = false)
     private BigDecimal subtotal;
 
-    // Constructor vacío requerido por JPA
     public VentaDetalle() {}
 
-    // Genera los Getters y Setters aquí debajo
+    // --- GETTERS Y SETTERS ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Venta getVenta() { return venta; }
+    public void setVenta(Venta venta) { this.venta = venta; }
+
+    public Long getIdBodega() { return idBodega; }
+    public void setIdBodega(Long idBodega) { this.idBodega = idBodega; }
+
+    public Long getIdProducto() { return idProducto; }
+    public void setIdProducto(Long idProducto) { this.idProducto = idProducto; }
+
+    public Long getIdLote() { return idLote; }
+    public void setIdLote(Long idLote) { this.idLote = idLote; }
+
+    public Integer getCantidad() { return cantidad; }
+    public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
+
+    public BigDecimal getPrecioUnitario() { return precioUnitario; }
+    public void setPrecioUnitario(BigDecimal precioUnitario) { this.precioUnitario = precioUnitario; }
+
+    public BigDecimal getSubtotal() { return subtotal; }
+    public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
 }

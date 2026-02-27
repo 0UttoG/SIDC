@@ -11,13 +11,13 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public void enviarFacturaSimple(String destinatario, String cuerpo) {
+    // Este es el método exacto que VentaService está buscando
+    public void enviarCorreo(String to, String subject, String text) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(destinatario);
-        message.setSubject("Factura de Venta - SIDC");
-        message.setText(cuerpo);
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(text);
 
         mailSender.send(message);
-        System.out.println("Correo enviado exitosamente a: " + destinatario);
     }
 }
