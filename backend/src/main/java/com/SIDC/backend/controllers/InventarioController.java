@@ -34,18 +34,21 @@ public class InventarioController {
         return ResponseEntity.ok(inventarioService.obtenerListadoInventario());
     }
 
+// En InventarioController.java
+
     @PostMapping("/lotes")
-    public ResponseEntity<String> registrarLote(@RequestBody NuevoLoteDTO dto) {
+    public ResponseEntity<?> registrarLote(@RequestBody NuevoLoteDTO dto) {
         inventarioService.registrarNuevoLote(dto);
-        return new ResponseEntity<>("Lote registrado correctamente", HttpStatus.CREATED);
+        // Devolvemos un Map (JSON) en lugar de un String simple
+        return new ResponseEntity<>(java.util.Map.of("mensaje", "Lote registrado correctamente"), HttpStatus.CREATED);
     }
 
     @PatchMapping("/ajustes")
-    public ResponseEntity<String> ajustarStock(@RequestBody AjusteStockDTO dto) {
+    public ResponseEntity<?> ajustarStock(@RequestBody AjusteStockDTO dto) {
         inventarioService.ajustarStock(dto);
-        return ResponseEntity.ok("Stock ajustado correctamente");
+        // Devolvemos un Map (JSON) en lugar de un String simple
+        return ResponseEntity.ok(java.util.Map.of("mensaje", "Stock ajustado correctamente"));
     }
-
     // --- NUEVOS ENDPOINTS PARA EL FRONTEND ---
 
     @GetMapping("/bodegas")
