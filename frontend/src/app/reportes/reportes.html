@@ -11,19 +11,48 @@
     <div *ngIf="reporteActivo === 'rutas'" class="p-6">
       <h2 class="text-xl font-black text-gray-900 mb-4">Resumen de Ventas por Ruta</h2>
       <table class="w-full text-left border-collapse">
-        <thead><tr class="text-gray-500 text-sm border-b-2 border-gray-200"><th class="pb-3 font-bold">Ruta / Zona</th><th class="pb-3 font-bold">Vendedor Asignado</th><th class="pb-3 font-bold text-center">Cant. Pedidos</th><th class="pb-3 font-bold text-right">Total Vendido</th></tr></thead>
+        <thead>
+          <tr class="text-gray-500 text-sm border-b-2 border-gray-200">
+            <th class="pb-3 font-bold">Ruta / Zona</th>
+            <th class="pb-3 font-bold">Vendedor Asignado</th>
+            <th class="pb-3 font-bold text-center">Cant. Pedidos</th>
+            <th class="pb-3 font-bold text-right">Total Vendido</th>
+          </tr>
+        </thead>
         <tbody class="text-sm">
-          <tr *ngFor="let r of ventasPorRuta" class="border-b border-gray-100 hover:bg-gray-50 transition-colors"><td class="py-4 font-bold text-gray-800">{{r.ruta}}</td><td class="py-4 text-gray-600">{{r.vendedor}}</td><td class="py-4 text-center">{{r.pedidos}}</td><td class="py-4 text-right font-black text-[#9400d3]">${{r.totalVendido | number:'1.2-2'}}</td></tr>
+          <tr *ngFor="let r of ventasRuta" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+            <td class="py-4 font-bold text-gray-800">{{r.rutaZona}}</td>
+            <td class="py-4 text-gray-600">{{r.vendedorAsignado}}</td>
+            <td class="py-4 text-center">{{r.cantPedidos}}</td>
+            <td class="py-4 text-right font-black text-[#9400d3]">{{r.totalVendido | currency:'USD'}}</td>
+          </tr>
         </tbody>
       </table>
     </div>
 
     <div *ngIf="reporteActivo === 'vencimiento'" class="p-6">
-      <h2 class="text-xl font-black text-gray-900 mb-4">Productos Próximos a Vencer (< 30 días)</h2>
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-black text-gray-900">Productos Próximos a Vencer (< 30 días)</h2>
+        <button (click)="descargarPDF()" class="px-5 py-2.5 bg-red-50 text-red-600 font-bold rounded-xl border border-red-200 hover:bg-red-500 hover:text-white transition-all shadow-sm flex items-center gap-2">
+          📄 Descargar PDF
+        </button>
+      </div>
       <table class="w-full text-left border-collapse">
-        <thead><tr class="text-gray-500 text-sm border-b-2 border-gray-200"><th class="pb-3 font-bold">Producto</th><th class="pb-3 font-bold">Lote</th><th class="pb-3 font-bold text-center">Fecha Vencimiento</th><th class="pb-3 font-bold text-center">Días Restantes</th></tr></thead>
+        <thead>
+          <tr class="text-gray-500 text-sm border-b-2 border-gray-200">
+            <th class="pb-3 font-bold">Producto</th>
+            <th class="pb-3 font-bold">Lote</th>
+            <th class="pb-3 font-bold text-center">Fecha Vencimiento</th>
+            <th class="pb-3 font-bold text-center">Días Restantes</th>
+          </tr>
+        </thead>
         <tbody class="text-sm">
-          <tr *ngFor="let p of proximosAVencer" class="border-b border-gray-100 hover:bg-gray-50 transition-colors"><td class="py-4 font-bold text-gray-800">{{p.producto}}</td><td class="py-4 font-mono text-gray-500">{{p.lote}}</td><td class="py-4 text-center">{{p.fechaVencimiento}}</td><td class="py-4 text-center"><span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg font-bold">{{p.diasRestantes}} días</span></td></tr>
+          <tr *ngFor="let p of vencimientos" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+            <td class="py-4 font-bold text-gray-800">{{p.producto}}</td>
+            <td class="py-4 font-mono text-gray-500">{{p.lote}}</td>
+            <td class="py-4 text-center">{{p.fechaVencimiento | date:'dd/MM/yyyy'}}</td>
+            <td class="py-4 text-center"><span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg font-bold">{{p.diasRestantes}} días</span></td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -31,9 +60,21 @@
     <div *ngIf="reporteActivo === 'morosos'" class="p-6">
       <h2 class="text-xl font-black text-gray-900 mb-4">Detalle de Clientes con Saldo en Mora</h2>
       <table class="w-full text-left border-collapse">
-        <thead><tr class="text-gray-500 text-sm border-b-2 border-gray-200"><th class="pb-3 font-bold">Cliente</th><th class="pb-3 font-bold text-right">Límite Crédito</th><th class="pb-3 font-bold text-right">Saldo Actual</th><th class="pb-3 font-bold text-center">Mora (Días)</th></tr></thead>
+        <thead>
+          <tr class="text-gray-500 text-sm border-b-2 border-gray-200">
+            <th class="pb-3 font-bold">Cliente</th>
+            <th class="pb-3 font-bold text-right">Límite Crédito</th>
+            <th class="pb-3 font-bold text-right">Saldo Actual</th>
+            <th class="pb-3 font-bold text-center">Mora (Días)</th>
+          </tr>
+        </thead>
         <tbody class="text-sm">
-          <tr *ngFor="let c of clientesMorosos" class="border-b border-gray-100 hover:bg-gray-50 transition-colors"><td class="py-4 font-bold text-gray-800">{{c.nombre}}</td><td class="py-4 text-right text-gray-500">${{c.limite | number:'1.2-2'}}</td><td class="py-4 text-right font-black text-red-500">${{c.saldo | number:'1.2-2'}}</td><td class="py-4 text-center"><span class="px-3 py-1 bg-red-100 text-red-700 rounded-lg font-bold">{{c.diasMora}} d</span></td></tr>
+          <tr *ngFor="let c of morosos" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+            <td class="py-4 font-bold text-gray-800">{{c.cliente}}</td>
+            <td class="py-4 text-right text-gray-500">{{c.limiteCredito | currency:'USD'}}</td>
+            <td class="py-4 text-right font-black text-red-500">{{c.saldoActual | currency:'USD'}}</td>
+            <td class="py-4 text-center"><span class="px-3 py-1 bg-red-100 text-red-700 rounded-lg font-bold">{{c.moraDias}} d</span></td>
+          </tr>
         </tbody>
       </table>
     </div>
