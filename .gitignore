@@ -17,3 +17,6 @@ frontend/tmp/
 *.swp
 *.log
 .DS_Store
+# Credenciales locales
+.env
+backend/src/main/resources/application-local.properties
