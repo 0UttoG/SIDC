@@ -8,28 +8,29 @@ import { CommonModule } from '@angular/common';
   templateUrl: './reportes.html',
 })
 export class Reportes {
-  // Controla qué reporte se está viendo
-  reporteActivo: string = 'ventas'; // puede ser: ventas, stock, morosos
+  reporteActivo: string = 'rutas'; // rutas, vencimiento, morosos
 
   cambiarReporte(reporte: string) {
     this.reporteActivo = reporte;
   }
 
-  // ==========================================
-  // DATOS SIMULADOS PARA LOS 3 REPORTES
-  // ==========================================
-  ventasMes = [
-    { fecha: '2026-02-25', factura: 'FAC-001', cliente: 'Supermercado El Sol', total: 840.50 },
-    { fecha: '2026-02-26', factura: 'FAC-002', cliente: 'Farmacia Salud', total: 1100.00 },
-    { fecha: '2026-02-27', factura: 'FAC-003', cliente: 'Tienda La Esquina', total: 320.00 }
+  // 1. VENTAS POR RUTA
+  ventasPorRuta = [
+    { ruta: 'Ruta 01 - Centro', vendedor: 'Juan Pérez', totalVendido: 1250.75, pedidos: 12 },
+    { ruta: 'Ruta 02 - Norte', vendedor: 'María López', totalVendido: 890.20, pedidos: 8 },
+    { ruta: 'Ruta 03 - Sur', vendedor: 'Carlos Ruiz', totalVendido: 2100.50, pedidos: 15 }
   ];
 
-  bajoStock = [
-    { lote: '102', nombre: 'Aceite Vegetal 1L', stock: 5, minimo: 15 }
+  // 2. PRODUCTOS PRÓXIMOS A VENCER (Menos de 30 días)
+  proximosAVencer = [
+    { producto: 'Leche Semidescremada 1L', lote: 'L-204', fechaVencimiento: '2026-03-05', diasRestantes: 6 },
+    { producto: 'Queso Crema 200g', lote: 'L-501', fechaVencimiento: '2026-03-12', diasRestantes: 13 },
+    { producto: 'Yogurt Natural 500ml', lote: 'L-102', fechaVencimiento: '2026-03-25', diasRestantes: 26 }
   ];
 
+  // 3. CLIENTES MOROSOS
   clientesMorosos = [
-    { nombre: 'Supermercado El Sol', limite: 5000.00, saldo: 1500.00 },
-    { nombre: 'Abarrotes Don Julio', limite: 1000.00, saldo: 950.00 }
+    { nombre: 'Supermercado El Sol', limite: 5000.00, saldo: 1500.00, diasMora: 5 },
+    { nombre: 'Abarrotes Don Julio', limite: 1000.00, saldo: 950.00, diasMora: 12 }
   ];
 }

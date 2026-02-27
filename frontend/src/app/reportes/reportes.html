@@ -1,39 +1,39 @@
 <div class="p-8 h-full flex flex-col">
   
   <div class="flex gap-4 mb-6">
-    <button (click)="cambiarReporte('ventas')" [class]="reporteActivo === 'ventas' ? 'px-6 py-3 bg-[#9400d3] text-white font-bold rounded-xl shadow-md transition-colors' : 'px-6 py-3 bg-white text-gray-600 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors'">Ventas del Mes</button>
-    <button (click)="cambiarReporte('stock')" [class]="reporteActivo === 'stock' ? 'px-6 py-3 bg-[#9400d3] text-white font-bold rounded-xl shadow-md transition-colors' : 'px-6 py-3 bg-white text-gray-600 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors'">Alertas de Stock</button>
-    <button (click)="cambiarReporte('morosos')" [class]="reporteActivo === 'morosos' ? 'px-6 py-3 bg-[#9400d3] text-white font-bold rounded-xl shadow-md transition-colors' : 'px-6 py-3 bg-white text-gray-600 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors'">Cuentas por Cobrar</button>
+    <button (click)="cambiarReporte('rutas')" [class]="reporteActivo === 'rutas' ? 'px-6 py-3 bg-[#9400d3] text-white font-bold rounded-xl shadow-md transition-all' : 'px-6 py-3 bg-white text-gray-600 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-all'">Ventas por Ruta</button>
+    <button (click)="cambiarReporte('vencimiento')" [class]="reporteActivo === 'vencimiento' ? 'px-6 py-3 bg-[#9400d3] text-white font-bold rounded-xl shadow-md transition-all' : 'px-6 py-3 bg-white text-gray-600 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-all'">Próximos a Vencer</button>
+    <button (click)="cambiarReporte('morosos')" [class]="reporteActivo === 'morosos' ? 'px-6 py-3 bg-[#9400d3] text-white font-bold rounded-xl shadow-md transition-all' : 'px-6 py-3 bg-white text-gray-600 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-all'">Clientes Morosos</button>
   </div>
 
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
     
-    <div *ngIf="reporteActivo === 'ventas'" class="p-6">
-      <h2 class="text-xl font-bold text-gray-900 mb-4">Reporte de Ventas Recientes</h2>
+    <div *ngIf="reporteActivo === 'rutas'" class="p-6">
+      <h2 class="text-xl font-black text-gray-900 mb-4">Resumen de Ventas por Ruta</h2>
       <table class="w-full text-left border-collapse">
-        <thead><tr class="text-gray-500 text-sm border-b-2 border-gray-200"><th class="pb-3 font-bold">Fecha</th><th class="pb-3 font-bold">Factura</th><th class="pb-3 font-bold">Cliente</th><th class="pb-3 font-bold text-right">Total</th></tr></thead>
+        <thead><tr class="text-gray-500 text-sm border-b-2 border-gray-200"><th class="pb-3 font-bold">Ruta / Zona</th><th class="pb-3 font-bold">Vendedor Asignado</th><th class="pb-3 font-bold text-center">Cant. Pedidos</th><th class="pb-3 font-bold text-right">Total Vendido</th></tr></thead>
         <tbody class="text-sm">
-          <tr *ngFor="let venta of ventasMes" class="border-b border-gray-100 hover:bg-gray-50 transition-colors"><td class="py-4">{{venta.fecha}}</td><td class="py-4 font-bold">{{venta.factura}}</td><td class="py-4 text-gray-600">{{venta.cliente}}</td><td class="py-4 text-right font-black text-[#9400d3]">${{venta.total | number:'1.2-2'}}</td></tr>
+          <tr *ngFor="let r of ventasPorRuta" class="border-b border-gray-100 hover:bg-gray-50 transition-colors"><td class="py-4 font-bold text-gray-800">{{r.ruta}}</td><td class="py-4 text-gray-600">{{r.vendedor}}</td><td class="py-4 text-center">{{r.pedidos}}</td><td class="py-4 text-right font-black text-[#9400d3]">${{r.totalVendido | number:'1.2-2'}}</td></tr>
         </tbody>
       </table>
     </div>
 
-    <div *ngIf="reporteActivo === 'stock'" class="p-6">
-      <h2 class="text-xl font-bold text-gray-900 mb-4">Productos Críticos (Bajo Stock)</h2>
+    <div *ngIf="reporteActivo === 'vencimiento'" class="p-6">
+      <h2 class="text-xl font-black text-gray-900 mb-4">Productos Próximos a Vencer (< 30 días)</h2>
       <table class="w-full text-left border-collapse">
-        <thead><tr class="text-gray-500 text-sm border-b-2 border-gray-200"><th class="pb-3 font-bold">Lote</th><th class="pb-3 font-bold">Producto</th><th class="pb-3 font-bold text-center">Stock Actual</th><th class="pb-3 font-bold text-center">Mínimo Sugerido</th></tr></thead>
+        <thead><tr class="text-gray-500 text-sm border-b-2 border-gray-200"><th class="pb-3 font-bold">Producto</th><th class="pb-3 font-bold">Lote</th><th class="pb-3 font-bold text-center">Fecha Vencimiento</th><th class="pb-3 font-bold text-center">Días Restantes</th></tr></thead>
         <tbody class="text-sm">
-          <tr *ngFor="let prod of bajoStock" class="border-b border-gray-100 hover:bg-gray-50 transition-colors"><td class="py-4 font-mono text-gray-500">{{prod.lote}}</td><td class="py-4 font-bold">{{prod.nombre}}</td><td class="py-4 text-center text-red-600 font-black text-lg">{{prod.stock}}</td><td class="py-4 text-center text-gray-500">{{prod.minimo}}</td></tr>
+          <tr *ngFor="let p of proximosAVencer" class="border-b border-gray-100 hover:bg-gray-50 transition-colors"><td class="py-4 font-bold text-gray-800">{{p.producto}}</td><td class="py-4 font-mono text-gray-500">{{p.lote}}</td><td class="py-4 text-center">{{p.fechaVencimiento}}</td><td class="py-4 text-center"><span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg font-bold">{{p.diasRestantes}} días</span></td></tr>
         </tbody>
       </table>
     </div>
 
     <div *ngIf="reporteActivo === 'morosos'" class="p-6">
-      <h2 class="text-xl font-bold text-gray-900 mb-4">Clientes con Saldo Pendiente</h2>
+      <h2 class="text-xl font-black text-gray-900 mb-4">Detalle de Clientes con Saldo en Mora</h2>
       <table class="w-full text-left border-collapse">
-        <thead><tr class="text-gray-500 text-sm border-b-2 border-gray-200"><th class="pb-3 font-bold">Cliente</th><th class="pb-3 font-bold text-right">Límite de Crédito</th><th class="pb-3 font-bold text-right">Saldo Pendiente</th><th class="pb-3 font-bold text-center">Estado</th></tr></thead>
+        <thead><tr class="text-gray-500 text-sm border-b-2 border-gray-200"><th class="pb-3 font-bold">Cliente</th><th class="pb-3 font-bold text-right">Límite Crédito</th><th class="pb-3 font-bold text-right">Saldo Actual</th><th class="pb-3 font-bold text-center">Mora (Días)</th></tr></thead>
         <tbody class="text-sm">
-          <tr *ngFor="let cliente of clientesMorosos" class="border-b border-gray-100 hover:bg-gray-50 transition-colors"><td class="py-4 font-bold">{{cliente.nombre}}</td><td class="py-4 text-right text-gray-500">${{cliente.limite | number:'1.2-2'}}</td><td class="py-4 text-right font-black text-red-500">${{cliente.saldo | number:'1.2-2'}}</td><td class="py-4 text-center"><span class="px-3 py-1 bg-red-100 text-red-700 rounded-lg font-bold text-xs">Con Deuda</span></td></tr>
+          <tr *ngFor="let c of clientesMorosos" class="border-b border-gray-100 hover:bg-gray-50 transition-colors"><td class="py-4 font-bold text-gray-800">{{c.nombre}}</td><td class="py-4 text-right text-gray-500">${{c.limite | number:'1.2-2'}}</td><td class="py-4 text-right font-black text-red-500">${{c.saldo | number:'1.2-2'}}</td><td class="py-4 text-center"><span class="px-3 py-1 bg-red-100 text-red-700 rounded-lg font-bold">{{c.diasMora}} d</span></td></tr>
         </tbody>
       </table>
     </div>
