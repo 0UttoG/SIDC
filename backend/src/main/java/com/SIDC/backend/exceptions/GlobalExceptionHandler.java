@@ -1,3 +1,4 @@
+// Archivo: src/main/java/com/SIDC/backend/exceptions/GlobalExceptionHandler.java
 package com.SIDC.backend.exceptions;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -8,12 +9,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // 1. Atrapa los errores de los Triggers de PostgreSQL
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         String mensajeError = "Error de validación en la base de datos.";
 
         // Extraer el mensaje específico del trigger de PostgreSQL
@@ -22,42 +25,35 @@ public class GlobalExceptionHandler {
         if (rootCause instanceof SQLException sqlEx) {
             String sqlMessage = sqlEx.getMessage();
 
-            // Buscamos la palabra clave que pusiste en los triggers de PostgreSQL
+            // Buscamos la palabra clave "Violación:" que pusiste en tus triggers
             if (sqlMessage != null && sqlMessage.contains("Violación:")) {
                 mensajeError = sqlMessage.substring(sqlMessage.indexOf("Violación:"));
                 mensajeError = mensajeError.split("\n")[0]; // Nos quedamos solo con la línea principal
             }
         }
 
-        ErrorResponse error = new ErrorResponse(
-                mensajeError,
-                HttpStatus.BAD_REQUEST.value(),
-                LocalDateTime.now()
-        );
-
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+        // Devolvemos un Map para que se convierta en JSON {"mensaje": "..."}
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "mensaje", mensajeError,
+                "timestamp", LocalDateTime.now()
+        ));
     }
 
-    // Fallback para cualquier otro error general
+    // 2. Atrapa los errores de lógica de negocio (ej. "Cliente no encontrado")
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "mensaje", ex.getMessage(),
+                "timestamp", LocalDateTime.now()
+        ));
+    }
+
+    // 3. Fallback para cualquier otro error imprevisto (Error 500)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        ErrorResponse error = new ErrorResponse(
-                "Error interno del servidor: " + ex.getMessage(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    // ... tu código anterior ...
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        ErrorResponse error = new ErrorResponse(
-                ex.getMessage(),
-                HttpStatus.BAD_REQUEST.value(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "mensaje", "Error interno del servidor: " + ex.getMessage(),
+                "timestamp", LocalDateTime.now()
+        ));
     }
 }
