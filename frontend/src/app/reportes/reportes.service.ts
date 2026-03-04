@@ -33,6 +33,9 @@ export class ReportesService {
   private http = inject(HttpClient);
   private baseUrl = 'http://localhost:8080/api/reportes';
 
+  // ==========================================
+  // DATOS PARA LAS TABLAS (JSON)
+  // ==========================================
   getVentasPorRuta(): Observable<ReporteVentasRuta[]> {
     return this.http.get<ReporteVentasRuta[]>(`${this.baseUrl}/ventas-ruta`);
   }
@@ -43,5 +46,20 @@ export class ReportesService {
 
   getClientesMorosos(): Observable<ReporteMoroso[]> {
     return this.http.get<ReporteMoroso[]>(`${this.baseUrl}/morosos`);
+  }
+
+  // ==========================================
+  // DESCARGA DE ARCHIVOS (BLOB)
+  // ==========================================
+  getVentasPorRutaPDF(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/ventas-ruta/pdf`, { responseType: 'blob' });
+  }
+
+  getProductosPorVencerPDF(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/vencimientos/pdf`, { responseType: 'blob' });
+  }
+
+  getClientesMorososPDF(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/morosos/pdf`, { responseType: 'blob' });
   }
 }
