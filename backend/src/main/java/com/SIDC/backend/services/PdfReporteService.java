@@ -118,4 +118,68 @@ public class PdfReporteService {
             tabla.addCell(celda);
         }
     }
+    // 👇 NUEVO MÉTODO: Generar Factura en Memoria (Para el Correo)
+    public byte[] generarFacturaVentaPdf(com.SIDC.backend.entities.Cliente cliente,
+                                         com.SIDC.backend.entities.Venta venta,
+                                         List<String> nombresProductos) {
+        try (java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
+            // Usamos tamaño A5, ideal para facturas/recibos
+            Document documento = new Document(PageSize.A5);
+            PdfWriter.getInstance(documento, baos);
+            documento.open();
+
+            // Título
+            Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, Color.DARK_GRAY);
+            Paragraph titulo = new Paragraph("Factura Comercial - SIDC", fontTitulo);
+            titulo.setAlignment(Element.ALIGN_CENTER);
+            documento.add(titulo);
+            documento.add(new Paragraph(" "));
+
+            // Datos del Cliente y la Venta
+            String condicionPago = venta.getEsCredito() ? "CRÉDITO (Pendiente de Pago)" : "CONTADO (Pagado)";
+
+            documento.add(new Paragraph("Factura N°: " + venta.getId()));
+            documento.add(new Paragraph("Cliente: " + cliente.getNombre()));
+            documento.add(new Paragraph("Condición: " + condicionPago, FontFactory.getFont(FontFactory.HELVETICA_BOLD)));
+            documento.add(new Paragraph(" "));
+
+            // Tabla de Detalles
+            PdfPTable tabla = new PdfPTable(4);
+            tabla.setWidthPercentage(100);
+            tabla.setWidths(new float[]{1f, 4f, 2f, 2f});
+
+            String[] headers = {"Cant.", "Producto", "P. Unit", "Subtotal"};
+            for (String h : headers) {
+                PdfPCell celda = new PdfPCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE)));
+                celda.setBackgroundColor(COLOR_MORADO);
+                celda.setPadding(5);
+                tabla.addCell(celda);
+            }
+
+            // Llenar los productos de la factura
+            int i = 0;
+            for (com.SIDC.backend.entities.VentaDetalle det : venta.getDetalles()) {
+                tabla.addCell(String.valueOf(det.getCantidad()));
+                tabla.addCell(nombresProductos.get(i));
+                tabla.addCell("$" + det.getPrecioUnitario());
+                tabla.addCell("$" + det.getPrecioUnitario().multiply(new java.math.BigDecimal(det.getCantidad())));
+                i++;
+            }
+
+            documento.add(tabla);
+            documento.add(new Paragraph(" "));
+
+            // Total
+            Paragraph total = new Paragraph("TOTAL A PAGAR: $" + venta.getTotal(), fontTitulo);
+            total.setAlignment(Element.ALIGN_RIGHT);
+            documento.add(total);
+
+            documento.close();
+            return baos.toByteArray(); // Devolvemos el PDF como bytes
+
+        } catch (Exception e) {
+            System.err.println("Error al generar PDF de factura: " + e.getMessage());
+            return null;
+        }
+    }
 }

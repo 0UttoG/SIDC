@@ -1,3 +1,4 @@
+// Archivo: src/main/java/com/SIDC/backend/services/VentaService.java
 package com.SIDC.backend.services;
 
 import com.SIDC.backend.dto.VentaDetalleRequestDTO;
@@ -7,6 +8,7 @@ import com.SIDC.backend.entities.Promocion;
 import com.SIDC.backend.entities.Venta;
 import com.SIDC.backend.entities.VentaDetalle;
 import com.SIDC.backend.repositories.ClienteRepository;
+import com.SIDC.backend.repositories.ProductoRepository;
 import com.SIDC.backend.repositories.PromocionRepository;
 import com.SIDC.backend.repositories.VentaRepository;
 import org.springframework.stereotype.Service;
@@ -24,12 +26,23 @@ public class VentaService {
     private final ClienteRepository clienteRepository;
     private final PromocionRepository promocionRepository;
 
-    public VentaService(VentaRepository ventaRepository, EmailService emailService,
-                        ClienteRepository clienteRepository, PromocionRepository promocionRepository) {
+    // Dependencias agregadas para el reporte PDF
+    private final ProductoRepository productoRepository;
+    private final PdfReporteService pdfReporteService;
+
+    // Constructor actualizado con todas las dependencias
+    public VentaService(VentaRepository ventaRepository,
+                        EmailService emailService,
+                        ClienteRepository clienteRepository,
+                        PromocionRepository promocionRepository,
+                        ProductoRepository productoRepository,
+                        PdfReporteService pdfReporteService) {
         this.ventaRepository = ventaRepository;
         this.emailService = emailService;
         this.clienteRepository = clienteRepository;
         this.promocionRepository = promocionRepository;
+        this.productoRepository = productoRepository;
+        this.pdfReporteService = pdfReporteService;
     }
 
     @Transactional
@@ -80,15 +93,38 @@ public class VentaService {
         // 3. trg_despues_insertar_detalle: Resta el stock automáticamente.
         Venta ventaGuardada = ventaRepository.save(venta);
 
-        // Enviar correo (opcional, no bloquea la venta)
+        // 👇 Generar PDF y enviar correo con la factura
         try {
-            emailService.enviarCorreo(
-                    cliente.getCorreo() != null ? cliente.getCorreo() : "info@sidc.com",
-                    "Comprobante de Venta SIDC",
-                    "Su compra por $" + ventaGuardada.getTotal() + " ha sido procesada exitosamente."
-            );
+            // 1. Extraer los nombres de los productos para que la factura no muestre solo IDs
+            java.util.List<String> nombresProductos = new java.util.ArrayList<>();
+            for (com.SIDC.backend.dto.VentaDetalleRequestDTO dto : request.detalles()) {
+                com.SIDC.backend.entities.Producto p = productoRepository.findById(dto.idProducto()).orElse(null);
+                nombresProductos.add(p != null ? p.getNombre() : "Producto #" + dto.idProducto());
+            }
+
+            // 2. Crear el PDF en memoria
+            byte[] facturaPdf = pdfReporteService.generarFacturaVentaPdf(cliente, ventaGuardada, nombresProductos);
+
+            // 3. Preparar el mensaje y enviar
+            if (facturaPdf != null) {
+                String condicion = ventaGuardada.getEsCredito() ? "al CRÉDITO" : "de CONTADO";
+                String mensajeCuerpo = "Hola " + cliente.getNombre() + ",\n\n" +
+                        "Gracias por su compra. Adjuntamos la factura detallada por un total de $" + ventaGuardada.getTotal() + ".\n" +
+                        "Condición de la venta: " + condicion + ".\n\n" +
+                        "Atentamente,\nEquipo SIDC";
+
+                String correoDestino = (cliente.getCorreo() != null && !cliente.getCorreo().isEmpty())
+                        ? cliente.getCorreo() : "noreply@sidc.com";
+
+                emailService.enviarFacturaConAdjunto(
+                        correoDestino,
+                        "Factura de Compra N° " + ventaGuardada.getId() + " - SIDC",
+                        mensajeCuerpo,
+                        facturaPdf
+                );
+            }
         } catch (Exception e) {
-            System.err.println("Error al enviar correo: " + e.getMessage());
+            System.err.println("Error en la generación/envío de la factura PDF: " + e.getMessage());
         }
 
         return ventaGuardada;
