@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { VentasService, VentaRequestDTO } from './ventas.service'; // <-- Importamos el nuevo servicio
+import { VentasService, VentaRequestDTO } from './ventas.service';
 
 @Component({
   selector: 'app-ventas',
@@ -16,8 +16,6 @@ export class Ventas implements OnInit {
   private http = inject(HttpClient);
 
   clientes: any[] = []; 
-  
-  // ¡Se fueron los datos quemados! Ahora arranca vacío y se llena del backend
   productosInventario: any[] = []; 
 
   clienteVentaSeleccionado: any = null;
@@ -25,14 +23,32 @@ export class Ventas implements OnInit {
   esCredito: boolean = false;
 
   mostrarModalCliente: boolean = false;
+  estaGuardando: boolean = false; // <-- Nueva variable para evitar el doble clic
   
   nuevoCliente: any = { 
     nombre: '', direccion: '', telefono: '', correo: '', canal: '', limiteCredito: null, idRuta: 1 
   };
 
+  // ==========================================
+  // 🌟 LÓGICA DE UI/UX: Toast Notification
+  // ==========================================
+  toastVisible: boolean = false;
+  toastMensaje: string = '';
+  toastTipo: 'success' | 'error' | 'warning' = 'success';
+
+  mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'warning') {
+    this.toastMensaje = mensaje;
+    this.toastTipo = tipo;
+    this.toastVisible = true;
+    
+    setTimeout(() => {
+      this.toastVisible = false;
+    }, 3000);
+  }
+
   ngOnInit() {
     this.cargarClientes();
-    this.cargarCatalogoReal(); // <-- Ejecutamos la carga de productos al entrar
+    this.cargarCatalogoReal();
   }
 
   // ==========================================
@@ -41,7 +57,6 @@ export class Ventas implements OnInit {
   cargarCatalogoReal() {
     this.ventasService.getCatalogo().subscribe({
       next: (data) => {
-        // Adaptamos el DTO de Nestor a los nombres que usa tu HTML
         this.productosInventario = data.map(p => ({
           id_bodega: p.idBodega,
           id_producto: p.idProducto,
@@ -53,12 +68,12 @@ export class Ventas implements OnInit {
           vencimiento: p.vencimiento
         }));
       },
-      error: (err) => console.error('Error cargando el catálogo:', err)
+      error: (err) => console.error('Esperando datos o CORS del backend:', err)
     });
   }
 
   // ==========================================
-  // LÓGICA DE CLIENTES (Se mantiene intacta)
+  // LÓGICA DE CLIENTES
   // ==========================================
   cargarClientes() {
     this.http.get<any[]>('http://localhost:8080/api/clientes').subscribe({
@@ -75,27 +90,49 @@ export class Ventas implements OnInit {
   }
 
   guardarCliente() {
-    if (!this.nuevoCliente.nombre || !this.nuevoCliente.direccion || !this.nuevoCliente.canal || !this.nuevoCliente.correo || this.nuevoCliente.limiteCredito === null) {
-      alert('Por favor llena el nombre, dirección, canal, correo y límite de crédito.'); return;
+    if (this.estaGuardando) return;
+
+    const c = this.nuevoCliente;
+    if (!c.nombre?.trim() || !c.direccion?.trim() || !c.correo?.trim() || !c.canal || c.limiteCredito === null || c.limiteCredito === undefined || c.limiteCredito === '') {
+      this.mostrarNotificacion('Por favor llena todos los campos obligatorios.', 'warning'); 
+      return;
     }
 
+    this.estaGuardando = true;
+
     const clienteDTO = {
-      nombre: this.nuevoCliente.nombre,
-      direccion: this.nuevoCliente.direccion,
-      telefono: this.nuevoCliente.telefono,
-      correo: this.nuevoCliente.correo,
-      idRuta: Number(this.nuevoCliente.idRuta),
-      limiteCredito: this.nuevoCliente.limiteCredito,
-      canal: this.nuevoCliente.canal
+      nombre: c.nombre.trim(),
+      direccion: c.direccion.trim(),
+      telefono: c.telefono,
+      correo: c.correo.trim(),
+      idRuta: Number(c.idRuta),
+      limiteCredito: Number(c.limiteCredito),
+      canal: c.canal
     };
+
+    // 🌟 RED DE SEGURIDAD: Si el backend se queda mudo por 5 segundos, liberamos el botón
+    const timeoutId = setTimeout(() => {
+      if (this.estaGuardando) {
+        this.estaGuardando = false;
+        this.mostrarNotificacion('El servidor tardó demasiado. Se cerró la espera, pero revisa si se guardó.', 'warning');
+        this.cargarClientes(); // Recargamos por si acaso sí se guardó en la DB
+        this.cerrarModalCliente(); 
+      }
+    }, 5000);
 
     this.http.post('http://localhost:8080/api/clientes', clienteDTO).subscribe({
       next: (res: any) => {
-        alert('¡Cliente creado exitosamente en Supabase!');
+        clearTimeout(timeoutId); // Cancelamos el cronómetro porque sí respondió
+        this.mostrarNotificacion('¡Cliente creado exitosamente en la base de datos!', 'success');
         this.cargarClientes(); 
-        this.cerrarModalCliente();
+        this.estaGuardando = false; 
+        this.cerrarModalCliente(); 
       },
-      error: (err) => alert('Error al guardar cliente.')
+      error: (err) => {
+        clearTimeout(timeoutId); // Cancelamos el cronómetro
+        this.estaGuardando = false; 
+        this.mostrarNotificacion('Error al guardar cliente en el servidor.', 'error');
+      }
     });
   }
 
@@ -103,33 +140,50 @@ export class Ventas implements OnInit {
   // LÓGICA DEL CARRITO
   // ==========================================
   agregarAlCarrito(producto: any) {
-    if (producto.stock_actual <= 0) { alert('Error: Sin stock.'); return; }
+    if (producto.stock_actual <= 0) { 
+      this.mostrarNotificacion('Error: El producto no tiene stock.', 'error'); 
+      return; 
+    }
+    
     const itemExistente = this.carrito.find(item => item.id_producto === producto.id_producto);
     if (itemExistente) {
       if(itemExistente.cantidad < producto.stock_actual) {
         itemExistente.cantidad++;
         itemExistente.subtotal = itemExistente.cantidad * itemExistente.precio_base;
-      } else { alert('Límite de stock alcanzado.'); }
+        this.mostrarNotificacion(`Se agregó otra unidad de ${producto.nombre}`, 'success');
+      } else { 
+        this.mostrarNotificacion('Límite de stock alcanzado para este producto.', 'warning'); 
+      }
     } else {
       this.carrito.push({ ...producto, cantidad: 1, subtotal: producto.precio_base });
+      this.mostrarNotificacion(`${producto.nombre} agregado al carrito`, 'success');
     }
   }
 
-  eliminarDelCarrito(index: number) { this.carrito.splice(index, 1); }
+  eliminarDelCarrito(index: number) { 
+    this.carrito.splice(index, 1); 
+    this.mostrarNotificacion('Producto removido del carrito', 'warning');
+  }
+  
   get totalVenta() { return this.carrito.reduce((acc, item) => acc + item.subtotal, 0); }
 
   // ==========================================
   // PASO 2: Procesar la Facturación Real
   // ==========================================
   facturar() {
-    if (!this.clienteVentaSeleccionado || this.carrito.length === 0) { 
-      alert('Selecciona cliente y productos.'); return; 
+    if (!this.clienteVentaSeleccionado) { 
+      this.mostrarNotificacion('Por favor, selecciona un cliente para la factura.', 'warning'); 
+      return; 
     }
 
-    // Armamos el objeto exacto que Nestor pidió
+    if (this.carrito.length === 0) {
+      this.mostrarNotificacion('El carrito está vacío. Agrega al menos un producto.', 'warning'); 
+      return;
+    }
+
     const ventaRequest: VentaRequestDTO = {
       idCliente: this.clienteVentaSeleccionado.id || this.clienteVentaSeleccionado.id_cliente,
-      idVendedor: 1, // Vendedor genérico o asigando a la ruta
+      idVendedor: 1, 
       idRuta: this.clienteVentaSeleccionado.idRuta || 1,
       esCredito: this.esCredito,
       detalles: this.carrito.map(item => ({
@@ -141,18 +195,16 @@ export class Ventas implements OnInit {
       }))
     };
 
-    // Usamos el servicio que acabás de crear
     this.ventasService.procesarVenta(ventaRequest).subscribe({
       next: (res) => {
-        alert('¡Factura registrada con éxito!');
+        this.mostrarNotificacion('¡Factura registrada y guardada con éxito!', 'success');
         this.carrito = []; 
         this.clienteVentaSeleccionado = null; 
         this.esCredito = false;
-        this.cargarCatalogoReal(); // Recargamos para que el stock de la pantalla baje automáticamente
+        this.cargarCatalogoReal(); 
       },
       error: (err) => {
-        // Aquí capturamos la "Violación de Ruta" o cualquier Trigger de la DB
-        alert('⛔ Error: ' + err.message);
+        this.mostrarNotificacion('⛔ Error al facturar: ' + err.message, 'error');
       }
     });
   }

@@ -1,37 +1,31 @@
 <div class="flex h-screen bg-gray-50 font-sans text-gray-800 relative">
 
   <aside class="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 shadow-sm z-10">
-    <div class="h-16 flex items-center px-6 border-b border-gray-200">
-      <span class="text-2xl font-black text-[#9400d3] tracking-wider">SIDC</span>
-    </div>
+  <div class="h-16 flex items-center px-6 border-b border-gray-200">
+  <a routerLink="/dashboard" class="text-2xl font-black text-[#9400d3] tracking-wider cursor-pointer hover:opacity-80 transition-opacity">SIDC</a>
+</div>
     <nav class="flex-1 p-4 space-y-2">
-      <a href="#" (click)="cambiarVista('dashboard'); $event.preventDefault()" [class]="vistaActual === 'dashboard' ? 'flex items-center px-4 py-3 bg-[#9400d3]/10 text-[#9400d3] rounded-xl font-bold transition-all' : 'flex items-center px-4 py-3 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-xl font-semibold transition-colors'">Dashboard</a>
-      <a href="#" (click)="cambiarVista('ventas'); $event.preventDefault()" [class]="vistaActual === 'ventas' ? 'flex items-center px-4 py-3 bg-[#9400d3]/10 text-[#9400d3] rounded-xl font-bold transition-all' : 'flex items-center px-4 py-3 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-xl font-semibold transition-colors'">Ventas y Facturación</a>
-      <a href="#" (click)="cambiarVista('inventario'); $event.preventDefault()" [class]="vistaActual === 'inventario' ? 'flex items-center px-4 py-3 bg-[#9400d3]/10 text-[#9400d3] rounded-xl font-bold transition-all' : 'flex items-center px-4 py-3 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-xl font-semibold transition-colors'">Inventario</a>
-      <a href="#" (click)="cambiarVista('reportes'); $event.preventDefault()" [class]="vistaActual === 'reportes' ? 'flex items-center px-4 py-3 bg-[#9400d3]/10 text-[#9400d3] rounded-xl font-bold transition-all' : 'flex items-center px-4 py-3 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-xl font-semibold transition-colors'">Reportes</a>
+      <a routerLink="/dashboard" [class]="esRutaActiva('/dashboard') ? 'flex items-center px-4 py-3 bg-[#9400d3]/10 text-[#9400d3] rounded-xl font-bold transition-all' : 'flex items-center px-4 py-3 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-xl font-semibold transition-colors'">Dashboard</a>
+      
+      <a routerLink="/ventas" [class]="esRutaActiva('/ventas') ? 'flex items-center px-4 py-3 bg-[#9400d3]/10 text-[#9400d3] rounded-xl font-bold transition-all' : 'flex items-center px-4 py-3 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-xl font-semibold transition-colors'">Ventas y Facturación</a>
+      
+      <a routerLink="/inventario" [class]="esRutaActiva('/inventario') ? 'flex items-center px-4 py-3 bg-[#9400d3]/10 text-[#9400d3] rounded-xl font-bold transition-all' : 'flex items-center px-4 py-3 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-xl font-semibold transition-colors'">Inventario</a>
+      
+      <a routerLink="/reportes" [class]="esRutaActiva('/reportes') ? 'flex items-center px-4 py-3 bg-[#9400d3]/10 text-[#9400d3] rounded-xl font-bold transition-all' : 'flex items-center px-4 py-3 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-xl font-semibold transition-colors'">Reportes</a>
     </nav>
   </aside>
 
   <main class="flex-1 flex flex-col overflow-y-auto">
     <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
       <h1 class="text-xl font-bold text-gray-800">
-        <ng-container *ngIf="vistaActual === 'dashboard'">Resumen General</ng-container>
-        <ng-container *ngIf="vistaActual === 'ventas'">Nueva Venta</ng-container>
-        <ng-container *ngIf="vistaActual === 'inventario'">Control de Inventario y Lotes</ng-container>
-        <ng-container *ngIf="vistaActual === 'reportes'">Generación de Reportes</ng-container>
+        {{ tituloActual }}
       </h1>
       <div class="flex items-center space-x-6">
         <input type="text" placeholder="Buscar..." class="bg-gray-100 border-none rounded-full px-5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#9400d3]/50 w-72">
       </div>
     </header>
 
-    <app-dashboard *ngIf="vistaActual === 'dashboard'"></app-dashboard>
-
-    <app-ventas *ngIf="vistaActual === 'ventas'"></app-ventas>
-
-    <app-inventario *ngIf="vistaActual === 'inventario'"></app-inventario>
-
-<app-reportes *ngIf="vistaActual === 'reportes'"></app-reportes>
+    <router-outlet></router-outlet>
 
   </main>
 </div>

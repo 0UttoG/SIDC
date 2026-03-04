@@ -117,8 +117,35 @@
       
       <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end space-x-3">
         <button (click)="cerrarModalCliente()" class="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
-        <button (click)="guardarCliente()" class="px-5 py-2.5 bg-[#9400d3] text-white font-bold rounded-xl shadow-md hover:bg-violet-800 transition-colors">Guardar Cliente</button>
+        <button (click)="guardarCliente()" 
+                [disabled]="estaGuardando"
+                class="px-5 py-2.5 bg-[#9400d3] text-white font-bold rounded-xl shadow-md hover:bg-violet-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ estaGuardando ? 'Guardando...' : 'Guardar Cliente' }}
+        </button>
       </div>
     </div>
   </div>
+
+  <div *ngIf="toastVisible" 
+       class="fixed top-6 right-6 z-[100] flex items-center p-4 mb-4 text-gray-700 bg-white rounded-xl shadow-2xl border-l-4 transition-all duration-300"
+       [ngClass]="{
+         'border-green-500': toastTipo === 'success',
+         'border-red-500': toastTipo === 'error',
+         'border-orange-500': toastTipo === 'warning'
+       }"
+       role="alert">
+       
+      <div class="inline-flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-lg"
+           [ngClass]="{
+             'text-green-500 bg-green-50': toastTipo === 'success',
+             'text-red-500 bg-red-50': toastTipo === 'error',
+             'text-orange-500 bg-orange-50': toastTipo === 'warning'
+           }">
+          <svg *ngIf="toastTipo === 'success'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          <svg *ngIf="toastTipo === 'error'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          <svg *ngIf="toastTipo === 'warning'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      </div>
+      <div class="ms-4 text-sm font-bold text-gray-800 pr-4">{{ toastMensaje }}</div>
+  </div>
+
 </div>
