@@ -1,13 +1,14 @@
+// Archivo: src/main/java/com/SIDC/backend/controllers/ClienteController.java
 package com.SIDC.backend.controllers;
 
 import com.SIDC.backend.entities.Cliente;
 import com.SIDC.backend.repositories.ClienteRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/clientes")
@@ -20,14 +21,19 @@ public class ClienteController {
         this.clienteRepository = clienteRepository;
     }
 
-    // Endpoint para Crear Cliente
     @PostMapping
-    @Transactional // Asegúrate de importar org.springframework.transaction.annotation.Transactional
-    public ResponseEntity<Cliente> crearCliente(@RequestBody Cliente cliente) {
-        return new ResponseEntity<>(clienteRepository.save(cliente), HttpStatus.CREATED);
+    // Eliminamos @Transactional de aquí para no bloquear la respuesta HTTP
+    public ResponseEntity<?> crearCliente(@RequestBody Cliente cliente) {
+        try {
+            clienteRepository.save(cliente);
+            // Devolvemos un JSON simple para que el Frontend lo reciba rápido y sin errores
+            return new ResponseEntity<>(Map.of("mensaje", "Cliente guardado correctamente"), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("mensaje", "Error al guardar el cliente: " + e.getMessage()));
+        }
     }
 
-    // Endpoint extra de regalo: Listar Clientes (Tu compañero lo necesitará para el select de Angular)
     @GetMapping
     public ResponseEntity<List<Cliente>> listarClientes() {
         return ResponseEntity.ok(clienteRepository.findAll());

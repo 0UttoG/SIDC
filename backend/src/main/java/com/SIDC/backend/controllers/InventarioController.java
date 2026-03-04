@@ -8,7 +8,7 @@ import com.SIDC.backend.entities.Bodega;
 import com.SIDC.backend.entities.Categoria;
 import com.SIDC.backend.repositories.BodegaRepository;
 import com.SIDC.backend.repositories.CategoriaRepository;
-import com.SIDC.backend.repositories.ExistenciaRepository;
+// import com.SIDC.backend.repositories.ExistenciaRepository; <-- ¡Eliminado!
 import com.SIDC.backend.services.InventarioService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,17 +25,15 @@ public class InventarioController {
     private final InventarioService inventarioService;
     private final BodegaRepository bodegaRepository;
     private final CategoriaRepository categoriaRepository;
-    private final ExistenciaRepository existenciaRepository;
+    // private final ExistenciaRepository existenciaRepository; <-- ¡Eliminado!
 
-    // Inyectamos todos los repositorios y servicios necesarios mediante el constructor
+    // Inyectamos solo lo que realmente usamos
     public InventarioController(InventarioService inventarioService,
                                 BodegaRepository bodegaRepository,
-                                CategoriaRepository categoriaRepository,
-                                ExistenciaRepository existenciaRepository) {
+                                CategoriaRepository categoriaRepository) {
         this.inventarioService = inventarioService;
         this.bodegaRepository = bodegaRepository;
         this.categoriaRepository = categoriaRepository;
-        this.existenciaRepository = existenciaRepository;
     }
 
     @GetMapping("/existencias")
@@ -65,9 +63,9 @@ public class InventarioController {
         return ResponseEntity.ok(categoriaRepository.findAll());
     }
 
+    // 👇 ENDPOINT CORREGIDO Y LIMPIO
     @GetMapping("/catalogo-ventas")
     public ResponseEntity<List<ProductoVentaDTO>> obtenerCatalogoVentas() {
-        // Ahora existenciaRepository está correctamente inyectado y disponible
-        return ResponseEntity.ok(existenciaRepository.obtenerCatalogoVenta());
+        return ResponseEntity.ok(inventarioService.obtenerCatalogoVentas());
     }
 }
