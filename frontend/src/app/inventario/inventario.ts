@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core'; // 🌟 Importamos ChangeDetectorRef
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventarioService, InventarioResponseDTO, NuevoLoteDTO, AjusteStockDTO } from './inventario.service';
@@ -11,22 +11,19 @@ import { InventarioService, InventarioResponseDTO, NuevoLoteDTO, AjusteStockDTO 
 })
 export class Inventario implements OnInit {
   private inventarioService = inject(InventarioService);
+  private cdr = inject(ChangeDetectorRef); // 🌟 Inyectamos el detector de cambios
 
   productosInventario: InventarioResponseDTO[] = [];
 
   mostrarModalNuevo: boolean = false;
   mostrarModalAjuste: boolean = false;
-  estaGuardando: boolean = false; // <-- Para evitar el doble clic
+  estaGuardando: boolean = false; 
 
   nuevoProducto: any = { nombre: '', lote: '', precio: null, stock: null, vencimiento: '', id_bodega: 1, id_categoria: 1 };
   
   productoSeleccionado: InventarioResponseDTO | null = null;
-  // Añadimos nombre y precio a la variable para que podás editarlos
   ajuste: any = { tipoMovimiento: 'Entrada', cantidad: null, nuevoNombre: '', nuevoPrecio: null };
 
-  // ==========================================
-  // 🌟 LÓGICA DE UI/UX: Toast Notification
-  // ==========================================
   toastVisible: boolean = false;
   toastMensaje: string = '';
   toastTipo: 'success' | 'error' | 'warning' = 'success';
@@ -35,7 +32,12 @@ export class Inventario implements OnInit {
     this.toastMensaje = mensaje;
     this.toastTipo = tipo;
     this.toastVisible = true;
-    setTimeout(() => { this.toastVisible = false; }, 3000);
+    this.cdr.detectChanges(); // 🌟 Forzamos que aparezca
+
+    setTimeout(() => { 
+      this.toastVisible = false; 
+      this.cdr.detectChanges(); // 🌟 Forzamos que desaparezca
+    }, 3000);
   }
 
   ngOnInit() {
@@ -44,7 +46,10 @@ export class Inventario implements OnInit {
 
   cargarInventario() {
     this.inventarioService.getExistencias().subscribe({
-      next: (data) => this.productosInventario = data,
+      next: (data) => {
+        this.productosInventario = data;
+        this.cdr.detectChanges(); // 🌟 LA MAGIA: Obliga a Angular a pintar la tabla de un solo
+      },
       error: (err) => {
         console.error('Error al cargar inventario:', err);
         this.mostrarNotificacion('Error al cargar el inventario del servidor.', 'error');
@@ -115,7 +120,6 @@ export class Inventario implements OnInit {
   // ==========================================
   abrirModalAjuste(prod: any) { 
     this.productoSeleccionado = prod; 
-    // Precargamos los datos para que podás verlos antes de editarlos
     this.ajuste = { 
       tipoMovimiento: 'Entrada', 
       cantidad: 0,
@@ -138,27 +142,22 @@ export class Inventario implements OnInit {
       this.mostrarNotificacion('El nombre del producto no puede quedar vacío.', 'warning'); return;
     }
 
-    if (this.ajuste.cantidad < 0) {
-      this.mostrarNotificacion('La cantidad de stock no puede ser negativa.', 'warning'); return;
-    }
-
     this.estaGuardando = true;
 
-    // Extendemos el payload original para mandar el Nombre y Precio a Java
     const payload: any = {
       idBodega: this.productoSeleccionado.idBodega,
       idProducto: this.productoSeleccionado.idProducto,
       idLote: this.productoSeleccionado.idLote,
       tipoMovimiento: this.ajuste.tipoMovimiento,
       cantidad: this.ajuste.cantidad || 0,
-      nuevoNombre: this.ajuste.nuevoNombre,     // <--- Lo que pidió Nestor
-      nuevoPrecio: this.ajuste.nuevoPrecio      // <--- Lo que pidió Nestor
+      nuevoNombre: this.ajuste.nuevoNombre,
+      nuevoPrecio: this.ajuste.nuevoPrecio
     };
 
     const timeoutId = setTimeout(() => {
       if (this.estaGuardando) {
         this.estaGuardando = false;
-        this.mostrarNotificacion('El servidor tardó demasiado. Revisa si se guardó.', 'warning');
+        this.mostrarNotificacion('El servidor tardó demasiado.', 'warning');
         this.cargarInventario();
         this.cerrarModalAjuste(); 
       }
@@ -167,7 +166,7 @@ export class Inventario implements OnInit {
     this.inventarioService.ajustarStock(payload).subscribe({
       next: () => {
         clearTimeout(timeoutId);
-        this.mostrarNotificacion('¡Producto y stock actualizados en Supabase!', 'success');
+        this.mostrarNotificacion('¡Producto y stock actualizados!', 'success');
         this.cargarInventario();
         this.estaGuardando = false;
         this.cerrarModalAjuste();
@@ -175,11 +174,7 @@ export class Inventario implements OnInit {
       error: (err) => {
         clearTimeout(timeoutId);
         this.estaGuardando = false;
-        if (err.status === 400 && err.error?.mensaje) {
-          this.mostrarNotificacion('⛔ Error de Negocio: ' + err.error.mensaje, 'error');
-        } else {
-          this.mostrarNotificacion('Error de conexión con el servidor.', 'error');
-        }
+        this.mostrarNotificacion('Error al actualizar.', 'error');
       }
     });
   }
