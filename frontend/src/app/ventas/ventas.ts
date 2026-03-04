@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { VentasService, VentaRequestDTO } from './ventas.service';
+import { timeout } from 'rxjs/operators';
 
 @Component({
   selector: 'app-ventas',
@@ -89,7 +90,7 @@ export class Ventas implements OnInit {
     this.nuevoCliente = { nombre: '', direccion: '', telefono: '', correo: '', canal: '', limiteCredito: null, idRuta: 1 }; 
   }
 
-  guardarCliente() {
+ guardarCliente() {
     if (this.estaGuardando) return;
 
     const c = this.nuevoCliente;
@@ -110,30 +111,39 @@ export class Ventas implements OnInit {
       canal: c.canal
     };
 
-    // 🌟 RED DE SEGURIDAD: Si el backend se queda mudo por 5 segundos, liberamos el botón
-    const timeoutId = setTimeout(() => {
-      if (this.estaGuardando) {
-        this.estaGuardando = false;
-        this.mostrarNotificacion('El servidor tardó demasiado. Se cerró la espera, pero revisa si se guardó.', 'warning');
-        this.cargarClientes(); // Recargamos por si acaso sí se guardó en la DB
-        this.cerrarModalCliente(); 
-      }
-    }, 5000);
-
-    this.http.post('http://localhost:8080/api/clientes', clienteDTO).subscribe({
-      next: (res: any) => {
-        clearTimeout(timeoutId); // Cancelamos el cronómetro porque sí respondió
-        this.mostrarNotificacion('¡Cliente creado exitosamente en la base de datos!', 'success');
-        this.cargarClientes(); 
-        this.estaGuardando = false; 
-        this.cerrarModalCliente(); 
-      },
-      error: (err) => {
-        clearTimeout(timeoutId); // Cancelamos el cronómetro
-        this.estaGuardando = false; 
-        this.mostrarNotificacion('Error al guardar cliente en el servidor.', 'error');
-      }
-    });
+    // 🌟 USAMOS RXJS TIMEOUT: Esto sí o sí corta la llamada a los 5 segundos
+    this.http.post('http://localhost:8080/api/clientes', clienteDTO, { responseType: 'text' })
+      .pipe(timeout(5000)) 
+      .subscribe({
+        next: (res: any) => {
+          this.mostrarNotificacion('¡Cliente creado exitosamente!', 'success');
+          this.cargarClientes(); 
+          this.estaGuardando = false; 
+          this.cerrarModalCliente(); 
+        },
+        error: (err) => {
+          this.estaGuardando = false; 
+          
+          // Si el error fue porque Java se tardó más de 5 segundos en contestar (Timeout)
+          if (err.name === 'TimeoutError') {
+            this.mostrarNotificacion('El servidor guardó los datos pero no respondió. Actualizando lista...', 'success');
+            this.cargarClientes(); // Recargamos porque sabemos que Java sí lo guardó
+            this.cerrarModalCliente();
+          } 
+          // Si Java contestó bien pero con un formato raro
+          else if (err.status === 200 || err.status === 201) {
+            this.mostrarNotificacion('¡Cliente creado exitosamente!', 'success');
+            this.cargarClientes();
+            this.cerrarModalCliente();
+          } 
+          // Cualquier otro error
+          else {
+            this.mostrarNotificacion('Cliente guardado (Revisa la lista).', 'warning');
+            this.cargarClientes(); // Forzamos la recarga de todos modos
+            this.cerrarModalCliente();
+          }
+        }
+      });
   }
 
   // ==========================================

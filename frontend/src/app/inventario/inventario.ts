@@ -16,12 +16,27 @@ export class Inventario implements OnInit {
 
   mostrarModalNuevo: boolean = false;
   mostrarModalAjuste: boolean = false;
+  estaGuardando: boolean = false; // <-- Para evitar el doble clic
 
-  // Variables para los inputs del HTML
   nuevoProducto: any = { nombre: '', lote: '', precio: null, stock: null, vencimiento: '', id_bodega: 1, id_categoria: 1 };
   
   productoSeleccionado: InventarioResponseDTO | null = null;
-  ajuste: any = { tipoMovimiento: 'Entrada', cantidad: null };
+  // Añadimos nombre y precio a la variable para que podás editarlos
+  ajuste: any = { tipoMovimiento: 'Entrada', cantidad: null, nuevoNombre: '', nuevoPrecio: null };
+
+  // ==========================================
+  // 🌟 LÓGICA DE UI/UX: Toast Notification
+  // ==========================================
+  toastVisible: boolean = false;
+  toastMensaje: string = '';
+  toastTipo: 'success' | 'error' | 'warning' = 'success';
+
+  mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'warning') {
+    this.toastMensaje = mensaje;
+    this.toastTipo = tipo;
+    this.toastVisible = true;
+    setTimeout(() => { this.toastVisible = false; }, 3000);
+  }
 
   ngOnInit() {
     this.cargarInventario();
@@ -30,7 +45,10 @@ export class Inventario implements OnInit {
   cargarInventario() {
     this.inventarioService.getExistencias().subscribe({
       next: (data) => this.productosInventario = data,
-      error: (err) => console.error('Error al cargar inventario:', err)
+      error: (err) => {
+        console.error('Error al cargar inventario:', err);
+        this.mostrarNotificacion('Error al cargar el inventario del servidor.', 'error');
+      }
     });
   }
 
@@ -38,17 +56,21 @@ export class Inventario implements OnInit {
   // MODAL: NUEVO LOTE
   // ==========================================
   abrirModalNuevo() { this.mostrarModalNuevo = true; }
+  
   cerrarModalNuevo() { 
     this.mostrarModalNuevo = false; 
     this.nuevoProducto = { nombre: '', lote: '', precio: null, stock: null, vencimiento: '', id_bodega: 1, id_categoria: 1 }; 
   }
 
   guardarProducto() {
+    if (this.estaGuardando) return;
+
     if (!this.nuevoProducto.nombre || !this.nuevoProducto.lote || !this.nuevoProducto.vencimiento) {
-      alert('Llena todos los campos obligatorios'); return;
+      this.mostrarNotificacion('Llena todos los campos obligatorios', 'warning'); return;
     }
 
-    // Mapeamos al DTO exacto de Nestor
+    this.estaGuardando = true;
+
     const payload: NuevoLoteDTO = {
       nombreProducto: this.nuevoProducto.nombre,
       codigoLote: this.nuevoProducto.lote,
@@ -59,61 +81,104 @@ export class Inventario implements OnInit {
       idCategoria: this.nuevoProducto.id_categoria
     };
 
+    const timeoutId = setTimeout(() => {
+      if (this.estaGuardando) {
+        this.estaGuardando = false;
+        this.mostrarNotificacion('El servidor tardó demasiado. Revisa la tabla.', 'warning');
+        this.cargarInventario();
+        this.cerrarModalNuevo(); 
+      }
+    }, 5000);
+
     this.inventarioService.registrarLote(payload).subscribe({
       next: () => {
-        alert('¡Lote registrado exitosamente!');
+        clearTimeout(timeoutId);
+        this.mostrarNotificacion('¡Lote registrado exitosamente!', 'success');
         this.cargarInventario();
+        this.estaGuardando = false;
         this.cerrarModalNuevo();
       },
       error: (err) => {
+        clearTimeout(timeoutId);
+        this.estaGuardando = false;
         if (err.status === 400 && err.error?.mensaje) {
-          alert('⛔ Violación de Regla: ' + err.error.mensaje);
+          this.mostrarNotificacion('⛔ Violación de Regla: ' + err.error.mensaje, 'error');
         } else {
-          alert('Error de conexión con el servidor.');
+          this.mostrarNotificacion('Error de conexión con el servidor.', 'error');
         }
       }
     });
   }
 
   // ==========================================
-  // MODAL: AJUSTE DE STOCK
+  // MODAL: EDICIÓN Y AJUSTE DE STOCK
   // ==========================================
-  abrirModalAjuste(prod: InventarioResponseDTO) { 
-    this.productoSeleccionado = prod; // Guardamos el producto entero para tener sus IDs
+  abrirModalAjuste(prod: any) { 
+    this.productoSeleccionado = prod; 
+    // Precargamos los datos para que podás verlos antes de editarlos
+    this.ajuste = { 
+      tipoMovimiento: 'Entrada', 
+      cantidad: 0,
+      nuevoNombre: prod.producto,
+      nuevoPrecio: prod.precio || 0 
+    }; 
     this.mostrarModalAjuste = true; 
   }
   
   cerrarModalAjuste() { 
     this.mostrarModalAjuste = false; 
     this.productoSeleccionado = null;
-    this.ajuste = { tipoMovimiento: 'Entrada', cantidad: null }; 
+    this.ajuste = { tipoMovimiento: 'Entrada', cantidad: null, nuevoNombre: '', nuevoPrecio: null }; 
   }
 
   guardarAjuste() {
-    if (!this.productoSeleccionado || !this.ajuste.cantidad || this.ajuste.cantidad <= 0) {
-      alert('Ingresa una cantidad válida mayor a 0'); return;
+    if (this.estaGuardando) return;
+
+    if (!this.productoSeleccionado || !this.ajuste.nuevoNombre) {
+      this.mostrarNotificacion('El nombre del producto no puede quedar vacío.', 'warning'); return;
     }
 
-    // Mapeamos al DTO de Ajuste
-    const payload: AjusteStockDTO = {
+    if (this.ajuste.cantidad < 0) {
+      this.mostrarNotificacion('La cantidad de stock no puede ser negativa.', 'warning'); return;
+    }
+
+    this.estaGuardando = true;
+
+    // Extendemos el payload original para mandar el Nombre y Precio a Java
+    const payload: any = {
       idBodega: this.productoSeleccionado.idBodega,
       idProducto: this.productoSeleccionado.idProducto,
       idLote: this.productoSeleccionado.idLote,
       tipoMovimiento: this.ajuste.tipoMovimiento,
-      cantidad: this.ajuste.cantidad
+      cantidad: this.ajuste.cantidad || 0,
+      nuevoNombre: this.ajuste.nuevoNombre,     // <--- Lo que pidió Nestor
+      nuevoPrecio: this.ajuste.nuevoPrecio      // <--- Lo que pidió Nestor
     };
+
+    const timeoutId = setTimeout(() => {
+      if (this.estaGuardando) {
+        this.estaGuardando = false;
+        this.mostrarNotificacion('El servidor tardó demasiado. Revisa si se guardó.', 'warning');
+        this.cargarInventario();
+        this.cerrarModalAjuste(); 
+      }
+    }, 5000);
 
     this.inventarioService.ajustarStock(payload).subscribe({
       next: () => {
-        alert('¡Stock actualizado en Supabase!');
+        clearTimeout(timeoutId);
+        this.mostrarNotificacion('¡Producto y stock actualizados en Supabase!', 'success');
         this.cargarInventario();
+        this.estaGuardando = false;
         this.cerrarModalAjuste();
       },
       error: (err) => {
+        clearTimeout(timeoutId);
+        this.estaGuardando = false;
         if (err.status === 400 && err.error?.mensaje) {
-          alert('⛔ Error de Negocio: ' + err.error.mensaje);
+          this.mostrarNotificacion('⛔ Error de Negocio: ' + err.error.mensaje, 'error');
         } else {
-          alert('Error de conexión con el servidor.');
+          this.mostrarNotificacion('Error de conexión con el servidor.', 'error');
         }
       }
     });
