@@ -1,3 +1,4 @@
+// Archivo: src/main/java/com/SIDC/backend/controllers/VentaController.java
 package com.SIDC.backend.controllers;
 
 import com.SIDC.backend.dto.VentaRequestDTO;
@@ -7,9 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/ventas")
-@CrossOrigin(origins = "http://localhost:4200") // Permite peticiones desde el Angular de tu compa
+@CrossOrigin(origins = "http://localhost:4200")
 public class VentaController {
 
     private final VentaService ventaService;
@@ -19,8 +22,16 @@ public class VentaController {
     }
 
     @PostMapping
-    public ResponseEntity<Venta> crearVenta(@RequestBody VentaRequestDTO request) {
-        Venta nuevaVenta = ventaService.procesarVenta(request);
-        return new ResponseEntity<>(nuevaVenta, HttpStatus.CREATED);
+    public ResponseEntity<?> crearVenta(@RequestBody VentaRequestDTO request) {
+        try {
+            Venta nuevaVenta = ventaService.procesarVenta(request);
+            return new ResponseEntity<>(java.util.Map.of(
+                    "mensaje", "Factura generada con éxito",
+                    "total", nuevaVenta.getTotal()
+            ), HttpStatus.CREATED);
+        } catch (Exception e) {
+            // Tu GlobalExceptionHandler se encargará de limpiar el mensaje del Trigger
+            throw e;
+        }
     }
 }

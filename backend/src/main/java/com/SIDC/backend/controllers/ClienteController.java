@@ -22,12 +22,15 @@ public class ClienteController {
     }
 
     @PostMapping
-    // Eliminamos @Transactional de aquí para no bloquear la respuesta HTTP
     public ResponseEntity<?> crearCliente(@RequestBody Cliente cliente) {
         try {
+            // Guardamos en la base de datos
             clienteRepository.save(cliente);
-            // Devolvemos un JSON simple para que el Frontend lo reciba rápido y sin errores
-            return new ResponseEntity<>(Map.of("mensaje", "Cliente guardado correctamente"), HttpStatus.CREATED);
+
+            // Retornamos EXACTAMENTE el JSON simple que pidió el frontend
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of("mensaje", "Cliente creado con éxito"));
+
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("mensaje", "Error al guardar el cliente: " + e.getMessage()));

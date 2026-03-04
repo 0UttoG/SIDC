@@ -1,3 +1,4 @@
+// Archivo: src/main/java/com/SIDC/backend/entities/Cliente.java
 package com.SIDC.backend.entities;
 
 import jakarta.persistence.*;
@@ -15,6 +16,14 @@ public class Cliente {
 
     private String nombre;
     private String telefono;
+
+    // Campo agregado para facturación y envío de comprobantes
+    private String correo;
+
+    // Se maneja como String para compatibilidad con el frontend.
+    // Importante: La columna en la DB debe ser de tipo TEXT o VARCHAR.
+    private String direccion;
+
     private Boolean activo = true;
 
     @Column(name = "id_ruta")
@@ -26,16 +35,16 @@ public class Cliente {
     @Column(name = "saldo_actual")
     private BigDecimal saldoActual = BigDecimal.ZERO;
 
-    // ¡Esta es la magia para que PostgreSQL lo acepte!
-// Dentro de Cliente.java
+    // Mapeo especial para el tipo ENUM 'tipo_canal' de PostgreSQL
     @Enumerated(EnumType.STRING)
-    @Column(name = "canal", columnDefinition = "tipo_canal") // Forzamos el tipo de la BD
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM) // Esto es clave para Hibernate 6+
+    @Column(name = "canal", columnDefinition = "tipo_canal")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private TipoCanal canal;
 
     public Cliente() {}
 
     // --- GETTERS Y SETTERS ---
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -44,6 +53,12 @@ public class Cliente {
 
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
+
+    public String getCorreo() { return correo; }
+    public void setCorreo(String correo) { this.correo = correo; }
+
+    public String getDireccion() { return direccion; }
+    public void setDireccion(String direccion) { this.direccion = direccion; }
 
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }

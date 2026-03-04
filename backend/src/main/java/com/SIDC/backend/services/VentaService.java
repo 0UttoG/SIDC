@@ -24,7 +24,6 @@ public class VentaService {
     private final ClienteRepository clienteRepository;
     private final PromocionRepository promocionRepository;
 
-    // ¡Aquí está la magia! El constructor ahora recibe los 4 servicios
     public VentaService(VentaRepository ventaRepository, EmailService emailService,
                         ClienteRepository clienteRepository, PromocionRepository promocionRepository) {
         this.ventaRepository = ventaRepository;
@@ -57,10 +56,12 @@ public class VentaService {
 
             BigDecimal precioUnitario = dto.precioUnitario();
 
+            // Lógica de promociones (se mantiene en Java)
             if (promoOpt.isPresent()) {
                 BigDecimal descuento = precioUnitario.multiply(
                         promoOpt.get().getPorcentajeDescuento().divide(new BigDecimal(100), 2, java.math.RoundingMode.HALF_UP)
                 );
+                precioUnitario = precioUnitario.subtract(descuento);
             }
 
             detalle.setPrecioUnitario(precioUnitario);
@@ -72,13 +73,23 @@ public class VentaService {
         }
 
         venta.setTotal(totalCalculado);
+
+        // ⚠️ AL GUARDAR, SE ACTIVAN LOS TRIGGERS DE POSTGRESQL:
+        // 1. trg_antes_insertar_venta: Valida rutas y límite de crédito.
+        // 2. trg_antes_insertar_detalle: Valida stock y vencimiento.
+        // 3. trg_despues_insertar_detalle: Resta el stock automáticamente.
         Venta ventaGuardada = ventaRepository.save(venta);
 
-        emailService.enviarCorreo(
-                "cliente@correo.com",
-                "Comprobante de Venta SIDC",
-                "Su compra por un total de $" + ventaGuardada.getTotal() + " ha sido procesada exitosamente."
-        );
+        // Enviar correo (opcional, no bloquea la venta)
+        try {
+            emailService.enviarCorreo(
+                    cliente.getCorreo() != null ? cliente.getCorreo() : "info@sidc.com",
+                    "Comprobante de Venta SIDC",
+                    "Su compra por $" + ventaGuardada.getTotal() + " ha sido procesada exitosamente."
+            );
+        } catch (Exception e) {
+            System.err.println("Error al enviar correo: " + e.getMessage());
+        }
 
         return ventaGuardada;
     }
