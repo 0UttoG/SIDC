@@ -45,17 +45,26 @@ export class Reportes implements OnInit {
 
   cargarTodosLosReportes() {
     this.reportesService.getVentasPorRuta().subscribe({
-      next: (data) => this.ventasRuta = data,
+      next: (data) => {
+        this.ventasRuta = data;
+        this.cdr.detectChanges(); // 🌟 LA MAGIA: Despierta a Angular para que muestre la tabla de Rutas
+      },
       error: (err) => console.error('Error al cargar ventas por ruta:', err)
     });
 
     this.reportesService.getProductosPorVencer().subscribe({
-      next: (data) => this.vencimientos = data,
+      next: (data) => {
+        this.vencimientos = data;
+        this.cdr.detectChanges(); // 🌟 Lo mismo para Vencimientos
+      },
       error: (err) => console.error('Error al cargar vencimientos:', err)
     });
 
     this.reportesService.getClientesMorosos().subscribe({
-      next: (data) => this.morosos = data,
+      next: (data) => {
+        this.morosos = data;
+        this.cdr.detectChanges(); // 🌟 Lo mismo para Morosos
+      },
       error: (err) => console.error('Error al cargar morosos:', err)
     });
   }
