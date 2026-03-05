@@ -1,38 +1,98 @@
-<div class="p-8 space-y-6">
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-      <div class="flex justify-between items-start">
-        <div><p class="text-sm font-semibold text-gray-500">Ventas del Día</p><h3 class="text-3xl font-black text-gray-900 mt-2">$1,245.00</h3></div>
-        <div class="p-3 bg-green-50 text-green-600 rounded-xl"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div>
-      </div>
+<div class="p-8 bg-gray-50 min-h-screen space-y-8" *ngIf="data">
+  
+  <div class="mb-2">
+    <h2 class="text-3xl font-black text-gray-800">Dashboard Principal</h2>
+    <p class="text-gray-500 mt-1">Resumen general del sistema en tiempo real</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-green-500 hover:shadow-md transition-shadow">
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">Ventas de Hoy</p>
+      <h3 class="text-2xl font-black text-gray-800 mt-1">{{data.ventasDelDia | currency:'USD'}}</h3>
     </div>
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-      <div class="flex justify-between items-start">
-        <div><p class="text-sm font-semibold text-gray-500">Productos por Vencer</p><h3 class="text-3xl font-black text-gray-900 mt-2">12 Lotes</h3></div>
-        <div class="p-3 bg-red-50 text-red-600 rounded-xl"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-      </div>
+    
+    <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-red-500 hover:shadow-md transition-shadow">
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">A Vencer (< 30d)</p>
+      <h3 class="text-2xl font-black text-gray-800 mt-1">{{data.productosPorVencer}} Prods</h3>
     </div>
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-      <div class="flex justify-between items-start">
-        <div><p class="text-sm font-semibold text-gray-500">Valor del Inventario</p><h3 class="text-3xl font-black text-gray-900 mt-2">$45,200.00</h3></div>
-        <div class="p-3 bg-[#9400d3]/10 text-[#9400d3] rounded-xl"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
-      </div>
+    
+    <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-[#9400d3] hover:shadow-md transition-shadow">
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">Valor Inventario</p>
+      <h3 class="text-2xl font-black text-[#9400d3] mt-1">{{data.valorInventario | currency:'USD'}}</h3>
+    </div>
+    
+    <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-orange-500 hover:shadow-md transition-shadow">
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">Riesgo Crédito</p>
+      <h3 class="text-2xl font-black text-gray-800 mt-1">{{data.riesgoCreditoTotal | currency:'USD'}}</h3>
+    </div>
+    
+    <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
+      <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">Rutas Activas Hoy</p>
+      <h3 class="text-2xl font-black text-gray-800 mt-1">{{data.rutasActivasHoy}}</h3>
     </div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <h3 class="text-lg font-bold text-gray-900 mb-6">Últimas Facturas</h3>
-      <table class="w-full text-left">
-        <thead><tr class="text-gray-400 text-sm border-b border-gray-100"><th class="pb-3 font-semibold">Factura</th><th class="pb-3 font-semibold">Cliente</th><th class="pb-3 font-semibold">Monto</th><th class="pb-3 font-semibold">Estado</th></tr></thead>
-        <tbody class="text-sm"><tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors"><td class="py-4 font-bold text-gray-900">FAC-001</td><td class="py-4 text-gray-600">Supermercado El Sol</td><td class="py-4 font-bold text-gray-900">$840.50</td><td class="py-4"><span class="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-bold text-xs">Pagado</span></td></tr></tbody>
-      </table>
-    </div>
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <h3 class="text-lg font-bold text-gray-900 mb-6">Alertas Críticas de Stock</h3>
-      <div class="flex justify-between items-center p-4 bg-red-50 rounded-xl border border-red-100">
-        <div class="flex items-center space-x-4"><div class="w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div><div><p class="text-sm font-bold text-gray-900">Arroz Premium 5kg</p><p class="text-xs text-red-600 font-semibold mt-1">Stock actual: 5 | Mínimo: 15</p></div></div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
+      <h4 class="font-bold text-gray-700 w-full mb-6 text-lg">Distribución de Ventas por Ruta</h4>
+      <div class="w-full max-w-[350px]">
+        <canvas baseChart [data]="pieChartData" [options]="pieChartOptions" [type]="pieChartType"></canvas>
       </div>
     </div>
+    
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <h4 class="font-bold text-gray-700 mb-6 text-lg">Top 5 Productos Más Vendidos</h4>
+      <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="barChartType"></canvas>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    
+    <div class="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <h4 class="font-bold text-gray-700 mb-4 text-lg">Últimos Movimientos de Facturación</h4>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="text-gray-400 text-xs uppercase border-b-2 border-gray-100">
+            <th class="pb-3 font-bold">Cliente</th>
+            <th class="pb-3 font-bold text-right">Total Facturado</th>
+            <th class="pb-3 font-bold text-center">Tipo de Venta</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of data.ultimasFacturas" class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+            <td class="py-4 text-sm font-bold text-gray-800">{{f.cliente}}</td>
+            <td class="py-4 text-sm text-[#9400d3] font-black text-right">{{f.total | currency:'USD'}}</td>
+            <td class="py-4 text-center">
+              <span [ngClass]="{'bg-orange-100 text-orange-700': f.estadoPago === 'Crédito', 'bg-green-100 text-green-700': f.estadoPago === 'Contado'}" 
+                    class="px-3 py-1 rounded-lg text-xs font-bold">
+                {{f.estadoPago}}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border-t-4 border-red-500">
+      <h4 class="font-bold text-red-600 mb-4 flex items-center gap-2 text-lg">
+        ⚠️ Alertas de Inventario
+      </h4>
+      <div class="space-y-3">
+        <div *ngFor="let a of data.alertasStock" class="flex justify-between items-center p-4 bg-red-50 border border-red-100 rounded-xl">
+          <div>
+            <p class="text-sm font-bold text-gray-900">{{a.nombreProducto}}</p>
+            <p class="text-xs text-red-500 font-semibold mt-1">Stock Actual: {{a.stockActual}} <span class="text-gray-400 font-normal">| Mínimo: {{a.stockMinimo}}</span></p>
+          </div>
+          <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <span class="text-red-600 font-black text-lg">!</span>
+          </div>
+        </div>
+        
+        <div *ngIf="data.alertasStock.length === 0" class="text-center p-6 text-gray-400 italic text-sm">
+          Todo el inventario está en niveles óptimos.
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
