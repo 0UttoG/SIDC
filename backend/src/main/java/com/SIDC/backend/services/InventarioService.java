@@ -1,3 +1,4 @@
+// Archivo: src/main/java/com/SIDC/backend/services/InventarioService.java
 package com.SIDC.backend.services;
 
 import com.SIDC.backend.dto.*;
@@ -79,7 +80,6 @@ public class InventarioService {
         return catalogo;
     }
 
-    // Método auxiliar para evitar duplicar lógica de fechas y limpiar advertencias
     private LocalDate convertirAFuncionLocalDate(Object objetoFecha) {
         if (objetoFecha == null) return LocalDate.now();
         if (objetoFecha instanceof java.sql.Date sqlDate) return sqlDate.toLocalDate();
@@ -95,6 +95,7 @@ public class InventarioService {
         Producto producto = new Producto();
         producto.setNombre(dto.nombreProducto());
         producto.setPrecioBase(dto.precio());
+        // El producto nace activo por defecto gracias a la entidad
         producto = productoRepository.save(producto);
 
         Lote lote = new Lote();
@@ -127,5 +128,31 @@ public class InventarioService {
             existencia.setStockActual(existencia.getStockActual() - dto.cantidad());
         }
         existenciaRepository.save(existencia);
+    }
+
+    // 👇 NUEVO: UPDATE - Actualizar información del Producto
+    // ==========================================
+    @Transactional
+    public void actualizarProducto(Long idProducto, ProductoActualizarDTO dto) {
+        Producto producto = productoRepository.findById(idProducto)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        producto.setNombre(dto.nombreProducto());
+        producto.setPrecioBase(dto.precio());
+        // Si tu DTO incluye categoría, puedes agregar: producto.setIdCategoria(dto.idCategoria());
+
+        productoRepository.save(producto);
+    }
+
+    // 👇 NUEVO: DELETE LÓGICO - Deshabilitar Producto
+    // ==========================================
+    @Transactional
+    public void deshabilitarProducto(Long idProducto) {
+        Producto producto = productoRepository.findById(idProducto)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        // En lugar de borrar de la BD, simplemente lo apagamos
+        producto.setActivo(false);
+        productoRepository.save(producto);
     }
 }

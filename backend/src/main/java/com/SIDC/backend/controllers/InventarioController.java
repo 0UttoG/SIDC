@@ -68,4 +68,22 @@ public class InventarioController {
     public ResponseEntity<List<ProductoVentaDTO>> obtenerCatalogoVentas() {
         return ResponseEntity.ok(inventarioService.obtenerCatalogoVentas());
     }
+
+    // 👇 NUEVO: ENDPOINT PARA ACTUALIZAR DATOS DEL PRODUCTO (PUT)
+    @PutMapping("/productos/{id}")
+    public ResponseEntity<Map<String, String>> actualizarProducto(
+            @PathVariable Long id,
+            @RequestBody com.SIDC.backend.dto.ProductoActualizarDTO request) {
+
+        inventarioService.actualizarProducto(id, request);
+        return ResponseEntity.ok(Map.of("mensaje", "Producto actualizado exitosamente"));
+    }
+
+    // 👇 NUEVO: ENDPOINT PARA ELIMINAR/DESHABILITAR PRODUCTO LÓGICAMENTE (DELETE)
+    @DeleteMapping("/productos/{id}")
+    public ResponseEntity<Map<String, String>> eliminarProducto(@PathVariable Long id) {
+
+        inventarioService.deshabilitarProducto(id);
+        return ResponseEntity.ok(Map.of("mensaje", "Producto eliminado del catálogo correctamente"));
+    }
 }

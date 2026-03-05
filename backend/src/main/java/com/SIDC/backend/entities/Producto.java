@@ -1,3 +1,4 @@
+// Archivo: src/main/java/com/SIDC/backend/entities/Producto.java
 package com.SIDC.backend.entities;
 
 import jakarta.persistence.*;
@@ -18,6 +19,10 @@ public class Producto {
 
     @Column(name = "precio_base")
     private BigDecimal precioBase;
+
+    // 👇 NUEVO CAMPO PARA EL BORRADO LÓGICO (Deshabilitar)
+    @Column(name = "activo", columnDefinition = "boolean default true")
+    private Boolean activo = true;
 
     public Producto() {}
 
@@ -53,5 +58,14 @@ public class Producto {
 
     public void setPrecioBase(BigDecimal precioBase) {
         this.precioBase = precioBase;
+    }
+
+    // 👇 NUEVOS GETTERS Y SETTERS PARA 'ACTIVO'
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
     }
 }
