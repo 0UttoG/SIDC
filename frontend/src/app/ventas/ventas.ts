@@ -1,4 +1,3 @@
-// 🌟 1. Agregamos ChangeDetectorRef aquí arriba
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,10 +11,8 @@ import { VentasService, VentaRequestDTO } from './ventas.service';
   templateUrl: './ventas.html',
 })
 export class Ventas implements OnInit {
-  
   private ventasService = inject(VentasService);
   private http = inject(HttpClient);
-  // 🌟 2. Inyectamos esto para obligar a la pantalla a actualizarse
   private cdr = inject(ChangeDetectorRef); 
 
   clientes: any[] = []; 
@@ -32,22 +29,19 @@ export class Ventas implements OnInit {
     nombre: '', direccion: '', telefono: '', correo: '', canal: '', limiteCredito: null, idRuta: 1 
   };
 
-  // ==========================================
-  // LÓGICA DE UI/UX: Toast Notification
-  // ==========================================
   toastVisible: boolean = false;
   toastMensaje: string = '';
   toastTipo: 'success' | 'error' | 'warning' = 'success';
 
-mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'warning') {
+  mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'warning') {
     this.toastMensaje = mensaje;
     this.toastTipo = tipo;
     this.toastVisible = true;
-    this.cdr.detectChanges(); // Fuerza a que aparezca al instante
+    this.cdr.detectChanges(); 
 
     setTimeout(() => {
       this.toastVisible = false;
-      this.cdr.detectChanges(); // 🌟 EL FIX: Le da la "cachetada" a Angular para que la quite a los 3 segundos
+      this.cdr.detectChanges(); 
     }, 3000);
   }
 
@@ -73,7 +67,7 @@ mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'warning') {
     this.http.get<any[]>('http://localhost:8080/api/clientes').subscribe({
       next: (data) => {
         this.clientes = data;
-        this.cdr.detectChanges(); // Forzamos actualización visual
+        this.cdr.detectChanges();
       },
       error: (err) => console.error('Error cargando clientes:', err)
     });
@@ -86,9 +80,6 @@ mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'warning') {
     this.nuevoCliente = { nombre: '', direccion: '', telefono: '', correo: '', canal: '', limiteCredito: null, idRuta: 1 }; 
   }
 
-  // ==========================================
-  // ✂️ GUARDAR CLIENTE CON "LA TIJERA"
-  // ==========================================
   guardarCliente() {
     if (this.estaGuardando) return;
 
@@ -105,7 +96,6 @@ mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'warning') {
       correo: c.correo.trim(), idRuta: Number(c.idRuta), limiteCredito: Number(c.limiteCredito), canal: c.canal
     };
 
-    // 🌟 LA TIJERA: Un controlador que matará la conexión a los 1000 milisegundos (1 segundo)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1000);
 
@@ -113,7 +103,7 @@ mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'warning') {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(clienteDTO),
-      signal: controller.signal // Conectamos la tijera al fetch
+      signal: controller.signal
     })
     .then(response => {
       clearTimeout(timeoutId);
@@ -121,24 +111,18 @@ mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'warning') {
     })
     .catch(error => {
       clearTimeout(timeoutId);
-      // Cuando la tijera corte la conexión, caerá aquí. 
-      // Pero como sabemos que Java lo guardó en 10ms, ¡lo declaramos un éxito rotundo!
       this.finalizarGuardado();
     });
   }
 
-  // Creamos esta función para no repetir código
   finalizarGuardado() {
     this.mostrarNotificacion('¡Cliente creado exitosamente!', 'success');
     this.cargarClientes(); 
     this.estaGuardando = false; 
     this.cerrarModalCliente(); 
-    this.cdr.detectChanges(); // 🌟 Le da una "cachetada" a Angular para que quite el círculo rojo YA
+    this.cdr.detectChanges(); 
   }
 
-  // ==========================================
-  // LÓGICA DEL CARRITO Y FACTURACIÓN
-  // ==========================================
   agregarAlCarrito(producto: any) {
     if (producto.stock_actual <= 0) { this.mostrarNotificacion('Error: El producto no tiene stock.', 'error'); return; }
     const itemExistente = this.carrito.find(item => item.id_producto === producto.id_producto);
@@ -180,7 +164,24 @@ mostrarNotificacion(mensaje: string, tipo: 'success' | 'error' | 'warning') {
         this.carrito = []; this.clienteVentaSeleccionado = null; this.esCredito = false;
         this.cargarCatalogoReal(); 
       },
-      error: (err) => { this.mostrarNotificacion('⛔ Error al facturar: ' + err.message, 'error'); }
+      error: (err) => { 
+        // 🌟 FILTRO DE ERRORES LIMPIO Y SEGURO
+        const errorCrudo = JSON.stringify(err) + (err.message || '') + (err.error?.mensaje || '');
+        const errorText = errorCrudo.toLowerCase();
+
+        let mensajeLimpio = 'Transacción rechazada por el servidor.';
+
+        // Revisamos si el error viene de los Triggers de la base de datos
+        if (errorText.includes('crédito') || errorText.includes('limite') || errorText.includes('excede')) {
+          mensajeLimpio = 'Venta denegada: El cliente excede su límite de crédito configurado.';
+        } else if (errorText.includes('inventario') || errorText.includes('insuficiente')) {
+          mensajeLimpio = 'Venta denegada: No hay suficiente stock en inventario.';
+        } else if (errorText.includes('vencido') || errorText.includes('caducan')) {
+          mensajeLimpio = 'Venta denegada: Hay productos vencidos en el carrito.';
+        }
+
+        this.mostrarNotificacion('⛔ ' + mensajeLimpio, 'error');
+      }
     });
   }
 }
