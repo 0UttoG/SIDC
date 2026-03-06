@@ -25,12 +25,9 @@ public class VentaService {
     private final EmailService emailService;
     private final ClienteRepository clienteRepository;
     private final PromocionRepository promocionRepository;
-
-    // Dependencias agregadas para el reporte PDF
     private final ProductoRepository productoRepository;
     private final PdfReporteService pdfReporteService;
 
-    // Constructor actualizado con todas las dependencias
     public VentaService(VentaRepository ventaRepository,
                         EmailService emailService,
                         ClienteRepository clienteRepository,
@@ -50,6 +47,7 @@ public class VentaService {
         Cliente cliente = clienteRepository.findById(request.idCliente())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
+        // Buscamos si hay promoción activa para este canal
         Optional<Promocion> promoOpt = promocionRepository.buscarPromocionActiva(cliente.getCanal(), LocalDate.now());
 
         Venta venta = new Venta();
@@ -69,7 +67,7 @@ public class VentaService {
 
             BigDecimal precioUnitario = dto.precioUnitario();
 
-            // Lógica de promociones (se mantiene en Java)
+            // Lógica de promociones
             if (promoOpt.isPresent()) {
                 BigDecimal descuento = precioUnitario.multiply(
                         promoOpt.get().getPorcentajeDescuento().divide(new BigDecimal(100), 2, java.math.RoundingMode.HALF_UP)
@@ -87,29 +85,30 @@ public class VentaService {
 
         venta.setTotal(totalCalculado);
 
-        // ⚠️ AL GUARDAR, SE ACTIVAN LOS TRIGGERS DE POSTGRESQL:
-        // 1. trg_antes_insertar_venta: Valida rutas y límite de crédito.
-        // 2. trg_antes_insertar_detalle: Valida stock y vencimiento.
-        // 3. trg_despues_insertar_detalle: Resta el stock automáticamente.
         Venta ventaGuardada = ventaRepository.save(venta);
 
         // 👇 Generar PDF y enviar correo con la factura
         try {
-            // 1. Extraer los nombres de los productos para que la factura no muestre solo IDs
             java.util.List<String> nombresProductos = new java.util.ArrayList<>();
-            for (com.SIDC.backend.dto.VentaDetalleRequestDTO dto : request.detalles()) {
+            for (VentaDetalleRequestDTO dto : request.detalles()) {
                 com.SIDC.backend.entities.Producto p = productoRepository.findById(dto.idProducto()).orElse(null);
                 nombresProductos.add(p != null ? p.getNombre() : "Producto #" + dto.idProducto());
             }
 
-            // 2. Crear el PDF en memoria
-            byte[] facturaPdf = pdfReporteService.generarFacturaVentaPdf(cliente, ventaGuardada, nombresProductos);
+            // 👇 Le pasamos la promoción al generador de PDF (si existe, sino manda null)
+            byte[] facturaPdf = pdfReporteService.generarFacturaVentaPdf(
+                    cliente, ventaGuardada, nombresProductos, promoOpt.orElse(null)
+            );
 
-            // 3. Preparar el mensaje y enviar
             if (facturaPdf != null) {
                 String condicion = ventaGuardada.getEsCredito() ? "al CRÉDITO" : "de CONTADO";
+
+                // 👇 Si hubo descuento, lo incluimos en el texto del correo
+                String textoDescuento = promoOpt.isPresent() ?
+                        " (Incluye un ahorro del " + promoOpt.get().getPorcentajeDescuento() + "% por promoción activa)." : ".";
+
                 String mensajeCuerpo = "Hola " + cliente.getNombre() + ",\n\n" +
-                        "Gracias por su compra. Adjuntamos la factura detallada por un total de $" + ventaGuardada.getTotal() + ".\n" +
+                        "Gracias por su compra. Adjuntamos la factura detallada por un total de $" + ventaGuardada.getTotal() + textoDescuento + "\n" +
                         "Condición de la venta: " + condicion + ".\n\n" +
                         "Atentamente,\nEquipo SIDC";
 
