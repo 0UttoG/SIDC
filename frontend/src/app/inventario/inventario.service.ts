@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-// --- INTERFACES ESTRICTAS (Contratos de Nestor) ---
 export interface InventarioResponseDTO {
   idBodega: number;
   idProducto: number;
@@ -12,6 +11,7 @@ export interface InventarioResponseDTO {
   stockActual: number;
   vencimiento: string;
   estado: string;
+  precio?: number; // Lo agregamos para que el modal lo reconozca
 }
 
 export interface NuevoLoteDTO {
@@ -24,12 +24,15 @@ export interface NuevoLoteDTO {
   idCategoria: number;
 }
 
-export interface AjusteStockDTO {
-  idBodega: number;
-  idProducto: number;
+// Actualizamos la interfaz para que coincida con el PUT de Nestor
+export interface ActualizarProductoDTO {
   idLote: number;
-  tipoMovimiento: string;
-  cantidad: number;
+  idBodega: number;
+  nombreProducto: string;
+  codigoLote: string;
+  precio: number;
+  stock: number;
+  fechaVencimiento: string;
 }
 
 @Injectable({
@@ -47,7 +50,13 @@ export class InventarioService {
     return this.http.post(`${this.apiUrl}/lotes`, lote);
   }
 
-  ajustarStock(ajuste: AjusteStockDTO): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/ajustes`, ajuste);
+  // NUEVO: Método para el PUT completo
+  actualizarProducto(id: number, data: ActualizarProductoDTO): Observable<any> {
+    return this.http.put(`${this.apiUrl}/productos/${id}`, data);
+  }
+
+  // NUEVO: Método para el DELETE Lógico
+  eliminarProducto(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/productos/${id}`);
   }
 }

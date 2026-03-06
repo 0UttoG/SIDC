@@ -27,7 +27,7 @@
             <td colspan="6">
               <div class="flex flex-col items-center justify-center py-16 text-center space-y-4">
                 <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100 shadow-sm">
-                  <svg class="w-8 h-8 text-[#9400d3]/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                  <svg class="w-8 h-8 text-[#9400d3]/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 006.586 13H4"></path></svg>
                 </div>
                 <div class="text-gray-400">
                   <p class="font-bold text-gray-700">No hay productos en el inventario</p>
@@ -53,7 +53,7 @@
               </span>
             </td>
             <td class="py-4 text-right">
-              <button (click)="abrirModalAjuste(prod)" class="px-4 py-2 bg-gray-100 text-[#9400d3] font-bold rounded-lg hover:bg-[#9400d3]/10 transition-colors">Editar / Ajustar</button>
+              <button (click)="abrirModalAjuste(prod)" class="px-4 py-2 bg-gray-100 text-[#9400d3] font-bold rounded-lg hover:bg-[#9400d3]/10 transition-colors">Editar</button>
             </td>
           </tr>
         </tbody>
@@ -74,7 +74,7 @@
           <div><label class="block text-sm font-bold text-gray-700 mb-1">Precio Unitario ($)</label><input type="number" [(ngModel)]="nuevoProducto.precio" placeholder="0.00" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50"></div>
         </div>
         <div class="grid grid-cols-2 gap-4">
-          <div><label class="block text-sm font-bold text-gray-700 mb-1">Stock Inicial</label><input type="number" [(ngModel)]="nuevoProducto.stock" placeholder="0" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50"></div>
+          <div><label class="block text-sm font-bold text-gray-700 mb-1">Stock Inicial</label><input type="number" min="0" [(ngModel)]="nuevoProducto.stock" placeholder="0" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50"></div>
           <div><label class="block text-sm font-bold text-gray-700 mb-1">Fecha Vencimiento</label><input type="date" [(ngModel)]="nuevoProducto.vencimiento" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50"></div>
         </div>
       </div>
@@ -90,73 +90,63 @@
   </div>
 
   <div *ngIf="mostrarModalAjuste" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl shadow-2xl w-[500px] overflow-hidden flex flex-col">
+    <div class="bg-white rounded-2xl shadow-2xl w-[550px] overflow-hidden flex flex-col">
       <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-        <h2 class="text-xl font-black text-[#9400d3]">Editar Producto y Stock</h2>
+        <h2 class="text-xl font-black text-[#9400d3]">Editar Producto</h2>
         <button (click)="cerrarModalAjuste()" class="text-gray-400 hover:text-red-500 font-bold">X</button>
       </div>
       
       <div class="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
-        <div class="bg-[#9400d3]/10 p-4 rounded-xl border border-[#9400d3]/20 mb-2">
-           <p class="text-sm text-[#9400d3] font-bold">Información Actual:</p>
-           <p class="text-xs text-gray-600 mt-1">Lote: <span class="font-mono font-bold">{{ productoSeleccionado?.lote }}</span> | Stock Actual: <span class="font-black">{{ productoSeleccionado?.stockActual }}</span></p>
-        </div>
-
+        
         <div>
           <label class="block text-sm font-bold text-gray-700 mb-1">Nombre del Producto</label>
           <input type="text" [(ngModel)]="ajuste.nuevoNombre" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
         </div>
         
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-1">Precio Unitario ($)</label>
-          <input type="number" [(ngModel)]="ajuste.nuevoPrecio" placeholder="0.00" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">Código de Lote</label>
+            <input type="text" [(ngModel)]="ajuste.nuevoLote" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50 font-mono">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">Precio Unitario ($)</label>
+            <input type="number" [(ngModel)]="ajuste.nuevoPrecio" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
+          </div>
         </div>
-
-        <hr class="border-gray-100 my-4">
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">Movimiento de Stock</label>
-            <select [(ngModel)]="ajuste.tipoMovimiento" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
-              <option value="Entrada">Entrada (+)</option>
-              <option value="Salida">Salida (-)</option>
-            </select>
+            <label class="block text-sm font-bold text-gray-700 mb-1">Stock Final</label>
+            <input type="number" min="0" [(ngModel)]="ajuste.stockFinal" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50 font-black text-lg">
           </div>
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-1">Cantidad a Mover</label>
-            <input type="number" [(ngModel)]="ajuste.cantidad" placeholder="0" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
+            <label class="block text-sm font-bold text-gray-700 mb-1">Fecha Vencimiento</label>
+            <input type="date" [(ngModel)]="ajuste.nuevaFecha" class="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#9400d3]/50">
           </div>
         </div>
       </div>
 
-      <div class="p-6 bg-gray-50 flex justify-end space-x-3 border-t border-gray-100">
-        <button (click)="cerrarModalAjuste()" class="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
-        <button (click)="guardarAjuste()" 
-                [disabled]="estaGuardando"
-                class="px-5 py-2.5 bg-[#9400d3] text-white font-bold rounded-xl shadow-md hover:bg-violet-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-          {{ estaGuardando ? 'Guardando...' : 'Aplicar Cambios' }}
+      <div class="p-6 bg-gray-50 flex justify-between items-center border-t border-gray-100">
+        <button (click)="eliminarProducto()" class="text-red-500 font-bold flex items-center gap-2 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+          Eliminar
         </button>
+        
+        <div class="flex space-x-3">
+          <button (click)="cerrarModalAjuste()" class="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
+          <button (click)="guardarAjuste()" 
+                  [disabled]="estaGuardando"
+                  class="px-5 py-2.5 bg-[#9400d3] text-white font-bold rounded-xl shadow-md hover:bg-violet-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ estaGuardando ? 'Guardando...' : 'Guardar Cambios' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
   <div *ngIf="toastVisible" 
        class="fixed top-6 right-6 z-[100] flex items-center p-4 mb-4 text-gray-700 bg-white rounded-xl shadow-2xl border-l-4 transition-all duration-300"
-       [ngClass]="{
-         'border-green-500': toastTipo === 'success',
-         'border-red-500': toastTipo === 'error',
-         'border-orange-500': toastTipo === 'warning'
-       }">
-      <div class="inline-flex items-center justify-center flex-shrink-0 w-10 h-10 rounded-lg"
-           [ngClass]="{
-             'text-green-500 bg-green-50': toastTipo === 'success',
-             'text-red-500 bg-red-50': toastTipo === 'error',
-             'text-orange-500 bg-orange-50': toastTipo === 'warning'
-           }">
-          <svg *ngIf="toastTipo === 'success'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-          <svg *ngIf="toastTipo === 'error'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          <svg *ngIf="toastTipo === 'warning'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-      </div>
+       [ngClass]="{'border-green-500': toastTipo === 'success','border-red-500': toastTipo === 'error','border-orange-500': toastTipo === 'warning'}">
       <div class="ms-4 text-sm font-bold text-gray-800 pr-4">{{ toastMensaje }}</div>
   </div>
 </div>

@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core'; // 🌟 Importamos ChangeDetectorRef
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { InventarioService, InventarioResponseDTO, NuevoLoteDTO, AjusteStockDTO } from './inventario.service';
+import { InventarioService, InventarioResponseDTO, NuevoLoteDTO, ActualizarProductoDTO } from './inventario.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-inventario',
@@ -11,7 +12,7 @@ import { InventarioService, InventarioResponseDTO, NuevoLoteDTO, AjusteStockDTO 
 })
 export class Inventario implements OnInit {
   private inventarioService = inject(InventarioService);
-  private cdr = inject(ChangeDetectorRef); // 🌟 Inyectamos el detector de cambios
+  private cdr = inject(ChangeDetectorRef);
 
   productosInventario: InventarioResponseDTO[] = [];
 
@@ -22,7 +23,7 @@ export class Inventario implements OnInit {
   nuevoProducto: any = { nombre: '', lote: '', precio: null, stock: null, vencimiento: '', id_bodega: 1, id_categoria: 1 };
   
   productoSeleccionado: InventarioResponseDTO | null = null;
-  ajuste: any = { tipoMovimiento: 'Entrada', cantidad: null, nuevoNombre: '', nuevoPrecio: null };
+  ajuste: any = { nuevoNombre: '', nuevoPrecio: null, nuevoLote: '', nuevaFecha: '', stockFinal: 0 };
 
   toastVisible: boolean = false;
   toastMensaje: string = '';
@@ -32,11 +33,11 @@ export class Inventario implements OnInit {
     this.toastMensaje = mensaje;
     this.toastTipo = tipo;
     this.toastVisible = true;
-    this.cdr.detectChanges(); // 🌟 Forzamos que aparezca
+    this.cdr.detectChanges();
 
     setTimeout(() => { 
       this.toastVisible = false; 
-      this.cdr.detectChanges(); // 🌟 Forzamos que desaparezca
+      this.cdr.detectChanges();
     }, 3000);
   }
 
@@ -48,18 +49,15 @@ export class Inventario implements OnInit {
     this.inventarioService.getExistencias().subscribe({
       next: (data) => {
         this.productosInventario = data;
-        this.cdr.detectChanges(); // 🌟 LA MAGIA: Obliga a Angular a pintar la tabla de un solo
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al cargar inventario:', err);
-        this.mostrarNotificacion('Error al cargar el inventario del servidor.', 'error');
+        this.mostrarNotificacion('Error al cargar el inventario.', 'error');
       }
     });
   }
 
-  // ==========================================
-  // MODAL: NUEVO LOTE
-  // ==========================================
   abrirModalNuevo() { this.mostrarModalNuevo = true; }
   
   cerrarModalNuevo() { 
@@ -74,6 +72,11 @@ export class Inventario implements OnInit {
       this.mostrarNotificacion('Llena todos los campos obligatorios', 'warning'); return;
     }
 
+    if (this.nuevoProducto.stock < 0) {
+      this.mostrarNotificacion('El stock inicial no puede ser negativo.', 'warning'); 
+      return;
+    }
+
     this.estaGuardando = true;
 
     const payload: NuevoLoteDTO = {
@@ -86,45 +89,29 @@ export class Inventario implements OnInit {
       idCategoria: this.nuevoProducto.id_categoria
     };
 
-    const timeoutId = setTimeout(() => {
-      if (this.estaGuardando) {
-        this.estaGuardando = false;
-        this.mostrarNotificacion('El servidor tardó demasiado. Revisa la tabla.', 'warning');
-        this.cargarInventario();
-        this.cerrarModalNuevo(); 
-      }
-    }, 5000);
-
     this.inventarioService.registrarLote(payload).subscribe({
       next: () => {
-        clearTimeout(timeoutId);
         this.mostrarNotificacion('¡Lote registrado exitosamente!', 'success');
         this.cargarInventario();
         this.estaGuardando = false;
         this.cerrarModalNuevo();
       },
       error: (err) => {
-        clearTimeout(timeoutId);
         this.estaGuardando = false;
-        if (err.status === 400 && err.error?.mensaje) {
-          this.mostrarNotificacion('⛔ Violación de Regla: ' + err.error.mensaje, 'error');
-        } else {
-          this.mostrarNotificacion('Error de conexión con el servidor.', 'error');
-        }
+        this.cdr.detectChanges();
+        this.mostrarNotificacion(err.error?.mensaje || 'Error de conexión', 'error');
       }
     });
   }
 
-  // ==========================================
-  // MODAL: EDICIÓN Y AJUSTE DE STOCK
-  // ==========================================
   abrirModalAjuste(prod: any) { 
     this.productoSeleccionado = prod; 
     this.ajuste = { 
-      tipoMovimiento: 'Entrada', 
-      cantidad: 0,
       nuevoNombre: prod.producto,
-      nuevoPrecio: prod.precio || 0 
+      nuevoPrecio: prod.precio || null, // Obliga a que salga vacío si no hay precio
+      nuevoLote: prod.lote,
+      nuevaFecha: prod.vencimiento,
+      stockFinal: prod.stockActual
     }; 
     this.mostrarModalAjuste = true; 
   }
@@ -132,49 +119,77 @@ export class Inventario implements OnInit {
   cerrarModalAjuste() { 
     this.mostrarModalAjuste = false; 
     this.productoSeleccionado = null;
-    this.ajuste = { tipoMovimiento: 'Entrada', cantidad: null, nuevoNombre: '', nuevoPrecio: null }; 
+    this.ajuste = { nuevoNombre: '', nuevoPrecio: null, nuevoLote: '', nuevaFecha: '', stockFinal: 0 }; 
   }
 
   guardarAjuste() {
     if (this.estaGuardando) return;
+    if (!this.productoSeleccionado || !this.ajuste.nuevoNombre || !this.ajuste.nuevoLote || !this.ajuste.nuevaFecha) {
+      this.mostrarNotificacion('Faltan datos obligatorios.', 'warning'); return;
+    }
 
-    if (!this.productoSeleccionado || !this.ajuste.nuevoNombre) {
-      this.mostrarNotificacion('El nombre del producto no puede quedar vacío.', 'warning'); return;
+    // 🌟 CANDADO: Evita mandar precios vacíos o en cero
+    if (this.ajuste.nuevoPrecio === null || this.ajuste.nuevoPrecio <= 0) {
+      this.mostrarNotificacion('El precio unitario debe ser mayor a $0.', 'warning'); 
+      return;
+    }
+
+    if (this.ajuste.stockFinal < 0) {
+      this.mostrarNotificacion('El stock final no puede ser menor a cero.', 'warning'); 
+      return;
     }
 
     this.estaGuardando = true;
 
-    const payload: any = {
-      idBodega: this.productoSeleccionado.idBodega,
-      idProducto: this.productoSeleccionado.idProducto,
+    const payload: ActualizarProductoDTO = {
       idLote: this.productoSeleccionado.idLote,
-      tipoMovimiento: this.ajuste.tipoMovimiento,
-      cantidad: this.ajuste.cantidad || 0,
-      nuevoNombre: this.ajuste.nuevoNombre,
-      nuevoPrecio: this.ajuste.nuevoPrecio
+      idBodega: this.productoSeleccionado.idBodega,
+      nombreProducto: this.ajuste.nuevoNombre,
+      codigoLote: this.ajuste.nuevoLote,
+      precio: this.ajuste.nuevoPrecio,
+      stock: this.ajuste.stockFinal,
+      fechaVencimiento: this.ajuste.nuevaFecha
     };
 
-    const timeoutId = setTimeout(() => {
-      if (this.estaGuardando) {
-        this.estaGuardando = false;
-        this.mostrarNotificacion('El servidor tardó demasiado.', 'warning');
-        this.cargarInventario();
-        this.cerrarModalAjuste(); 
-      }
-    }, 5000);
-
-    this.inventarioService.ajustarStock(payload).subscribe({
+    this.inventarioService.actualizarProducto(this.productoSeleccionado.idProducto, payload).subscribe({
       next: () => {
-        clearTimeout(timeoutId);
-        this.mostrarNotificacion('¡Producto y stock actualizados!', 'success');
+        this.mostrarNotificacion('¡Producto actualizado exitosamente!', 'success');
         this.cargarInventario();
         this.estaGuardando = false;
         this.cerrarModalAjuste();
       },
       error: (err) => {
-        clearTimeout(timeoutId);
         this.estaGuardando = false;
-        this.mostrarNotificacion('Error al actualizar.', 'error');
+        this.cdr.detectChanges(); // 🌟 MAGIA: Destraba el botón de inmediato si hay error
+        this.mostrarNotificacion(err.error?.mensaje || 'Error al actualizar', 'error');
+      }
+    });
+  }
+
+  eliminarProducto() {
+    if (!this.productoSeleccionado) return;
+
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: "Este producto ya no aparecerá para la venta. Esta acción no borra facturas pasadas.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.inventarioService.eliminarProducto(this.productoSeleccionado!.idProducto).subscribe({
+          next: () => {
+            this.mostrarNotificacion('Producto eliminado del catálogo.', 'success');
+            this.cargarInventario();
+            this.cerrarModalAjuste();
+          },
+          error: (err) => {
+            this.mostrarNotificacion(err.error?.mensaje || 'No se pudo eliminar el producto.', 'error');
+          }
+        });
       }
     });
   }
