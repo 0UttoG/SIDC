@@ -10,7 +10,7 @@ import java.util.List;
 public interface ExistenciaRepository extends JpaRepository<Existencia, ExistenciaId> {
 
     // 1. Método para el Dashboard (Filtra solo productos activos)
-    @Query(value = "SELECT e.id_bodega, e.id_producto, e.id_lote, p.nombre, l.codigo_lote, e.stock_actual, l.fecha_vencimiento " +
+    @Query(value = "SELECT e.id_bodega, e.id_producto, e.id_lote, p.nombre, l.codigo_lote, e.stock_actual, l.fecha_vencimiento, p.precio_base " +
             "FROM existencias e " +
             "JOIN productos p ON e.id_producto = p.id " +
             "JOIN lotes l ON e.id_lote = l.id " +

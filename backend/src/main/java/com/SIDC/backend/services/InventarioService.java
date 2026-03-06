@@ -7,6 +7,7 @@ import com.SIDC.backend.repositories.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class InventarioService {
     }
 
     // ==========================================
-    // READ: Dashboard
+    // READ: Dashboard (Ahora incluye el precio)
     // ==========================================
     public List<InventarioResponseDTO> obtenerListadoInventario() {
         List<Object[]> resultados = existenciaRepository.obtenerInventarioCompleto();
@@ -47,9 +48,12 @@ public class InventarioService {
                 else if (diasParaVencer < 0) estado = "Vencido";
                 else if (stock <= 10) estado = "Bajo Stock";
 
+                // Extraemos el precio base (el nuevo campo en la posición 7)
+                BigDecimal precio = fila[7] != null ? new BigDecimal(fila[7].toString()) : BigDecimal.ZERO;
+
                 listado.add(new InventarioResponseDTO(
                         ((Number) fila[0]).longValue(), ((Number) fila[1]).longValue(),
-                        ((Number) fila[2]).longValue(), nombre, codigoLote, stock, vencimiento, estado
+                        ((Number) fila[2]).longValue(), nombre, codigoLote, stock, vencimiento, estado, precio
                 ));
             } catch (Exception e) {
                 System.err.println("Error dashboard: " + e.getMessage());
@@ -71,7 +75,7 @@ public class InventarioService {
                         ((Number) fila[0]).longValue(), ((Number) fila[1]).longValue(),
                         ((Number) fila[2]).longValue(), fila[3].toString(), fila[4].toString(),
                         convertirAFuncionLocalDate(fila[6]), ((Number) fila[5]).intValue(),
-                        new java.math.BigDecimal(fila[7].toString())
+                        new BigDecimal(fila[7].toString())
                 ));
             } catch (Exception e) {
                 System.err.println("Error catálogo ventas: " + e.getMessage());
@@ -95,7 +99,6 @@ public class InventarioService {
         Producto producto = new Producto();
         producto.setNombre(dto.nombreProducto());
         producto.setPrecioBase(dto.precio());
-        // El producto nace activo por defecto gracias a la entidad
         producto = productoRepository.save(producto);
 
         Lote lote = new Lote();
@@ -130,28 +133,47 @@ public class InventarioService {
         existenciaRepository.save(existencia);
     }
 
-    // 👇 NUEVO: UPDATE - Actualizar información del Producto
+    // ==========================================
+    // UPDATE - Actualizar información Completa (Cero tolerancia a errores)
     // ==========================================
     @Transactional
     public void actualizarProducto(Long idProducto, ProductoActualizarDTO dto) {
+
+        // 0. Validación estricta: Si falta el ID del lote o bodega, cortamos la ejecución de raíz.
+        if (dto.idLote() == null || dto.idBodega() == null) {
+            throw new RuntimeException("Error: El frontend no está enviando el idLote o el idBodega.");
+        }
+
+        // 1. Actualizamos la tabla PRODUCTOS
         Producto producto = productoRepository.findById(idProducto)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-
         producto.setNombre(dto.nombreProducto());
         producto.setPrecioBase(dto.precio());
-        // Si tu DTO incluye categoría, puedes agregar: producto.setIdCategoria(dto.idCategoria());
-
         productoRepository.save(producto);
+
+        // 2. Actualizamos la tabla LOTES (Ya sin el if condicional)
+        Lote lote = loteRepository.findById(dto.idLote())
+                .orElseThrow(() -> new RuntimeException("Lote no encontrado"));
+        lote.setCodigoLote(dto.codigoLote());
+        lote.setFechaVencimiento(dto.fechaVencimiento());
+        loteRepository.save(lote);
+
+        // 3. Actualizamos la tabla EXISTENCIAS (Ya sin el if condicional)
+        ExistenciaId existenciaId = new ExistenciaId(dto.idBodega(), idProducto, dto.idLote());
+        Existencia existencia = existenciaRepository.findById(existenciaId)
+                .orElseThrow(() -> new RuntimeException("Existencia no encontrada"));
+        existencia.setStockActual(dto.stock());
+        existenciaRepository.save(existencia);
     }
 
-    // 👇 NUEVO: DELETE LÓGICO - Deshabilitar Producto
+    // ==========================================
+    // DELETE LÓGICO - Deshabilitar Producto
     // ==========================================
     @Transactional
     public void deshabilitarProducto(Long idProducto) {
         Producto producto = productoRepository.findById(idProducto)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
-        // En lugar de borrar de la BD, simplemente lo apagamos
         producto.setActivo(false);
         productoRepository.save(producto);
     }
