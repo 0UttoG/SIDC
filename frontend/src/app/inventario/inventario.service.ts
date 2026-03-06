@@ -2,16 +2,17 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+// 🌟 INTERFAZ ACTUALIZADA CON LOS NUEVOS NOMBRES DE NESTOR
 export interface InventarioResponseDTO {
   idBodega: number;
   idProducto: number;
   idLote: number;
-  producto: string;
-  lote: string;
-  stockActual: number;
-  vencimiento: string;
+  nombreProducto: string; // Antes era 'producto'
+  codigoLote: string;     // Antes era 'lote'
+  stock: number;          // Antes era 'stockActual'
+  fechaVencimiento: string; // Antes era 'vencimiento'
   estado: string;
-  precio?: number; // Lo agregamos para que el modal lo reconozca
+  precioBase: number;     // 🌟 ¡Al fin llegó el precio!
 }
 
 export interface NuevoLoteDTO {
@@ -24,7 +25,6 @@ export interface NuevoLoteDTO {
   idCategoria: number;
 }
 
-// Actualizamos la interfaz para que coincida con el PUT de Nestor
 export interface ActualizarProductoDTO {
   idLote: number;
   idBodega: number;
@@ -50,12 +50,10 @@ export class InventarioService {
     return this.http.post(`${this.apiUrl}/lotes`, lote);
   }
 
-  // NUEVO: Método para el PUT completo
   actualizarProducto(id: number, data: ActualizarProductoDTO): Observable<any> {
     return this.http.put(`${this.apiUrl}/productos/${id}`, data);
   }
 
-  // NUEVO: Método para el DELETE Lógico
   eliminarProducto(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/productos/${id}`);
   }

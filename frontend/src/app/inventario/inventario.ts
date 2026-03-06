@@ -53,7 +53,7 @@ export class Inventario implements OnInit {
       },
       error: (err) => {
         console.error('Error al cargar inventario:', err);
-        this.mostrarNotificacion('Error al cargar el inventario.', 'error');
+        this.mostrarNotificacion('Error al cargar el inventario del servidor.', 'error');
       }
     });
   }
@@ -104,18 +104,15 @@ export class Inventario implements OnInit {
     });
   }
 
-abrirModalAjuste(prod: any) { 
-    // 🕵️‍♂️ EL CHISMOSO: Esto va a imprimir en tu navegador el JSON exacto
-    console.log("Datos exactos que manda Java:", prod);
-
+  // 🌟 ACTUALIZADO: Usando las nuevas variables de Nestor
+  abrirModalAjuste(prod: InventarioResponseDTO) { 
     this.productoSeleccionado = prod; 
     this.ajuste = { 
-      nuevoNombre: prod.producto,
-      // 🌟 TRAMPA TRIPLE: Buscamos las 3 formas en las que Java pudo mandarlo
-      nuevoPrecio: prod.precio || prod.precioBase || prod.precio_base || null, 
-      nuevoLote: prod.lote,
-      nuevaFecha: prod.vencimiento,
-      stockFinal: prod.stockActual
+      nuevoNombre: prod.nombreProducto,
+      nuevoPrecio: prod.precioBase, // ¡El precio ya viene directo!
+      nuevoLote: prod.codigoLote,
+      nuevaFecha: prod.fechaVencimiento,
+      stockFinal: prod.stock
     }; 
     this.mostrarModalAjuste = true; 
   }
@@ -132,7 +129,6 @@ abrirModalAjuste(prod: any) {
       this.mostrarNotificacion('Faltan datos obligatorios.', 'warning'); return;
     }
 
-    // 🌟 CANDADO: Evita mandar precios vacíos o en cero
     if (this.ajuste.nuevoPrecio === null || this.ajuste.nuevoPrecio <= 0) {
       this.mostrarNotificacion('El precio unitario debe ser mayor a $0.', 'warning'); 
       return;
@@ -164,7 +160,7 @@ abrirModalAjuste(prod: any) {
       },
       error: (err) => {
         this.estaGuardando = false;
-        this.cdr.detectChanges(); // 🌟 MAGIA: Destraba el botón de inmediato si hay error
+        this.cdr.detectChanges(); 
         this.mostrarNotificacion(err.error?.mensaje || 'Error al actualizar', 'error');
       }
     });
