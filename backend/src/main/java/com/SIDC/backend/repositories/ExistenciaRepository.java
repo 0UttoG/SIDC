@@ -17,11 +17,11 @@ public interface ExistenciaRepository extends JpaRepository<Existencia, Existenc
             "WHERE p.activo = true", nativeQuery = true)
     List<Object[]> obtenerInventarioCompleto();
 
-    // 2. Método para Ventas (Filtra stock > 0, no vencidos Y activos)
+    // 2. Método para Ventas (Filtra stock > 0, no vencidos Y activos. CORREGIDO: > CURRENT_DATE)
     @Query(value = "SELECT e.id_bodega, e.id_producto, e.id_lote, p.nombre, l.codigo_lote, e.stock_actual, l.fecha_vencimiento, p.precio_base " +
             "FROM existencias e " +
             "JOIN productos p ON e.id_producto = p.id " +
             "JOIN lotes l ON e.id_lote = l.id " +
-            "WHERE e.stock_actual > 0 AND l.fecha_vencimiento >= CURRENT_DATE AND p.activo = true", nativeQuery = true)
+            "WHERE e.stock_actual > 0 AND l.fecha_vencimiento > CURRENT_DATE AND p.activo = true", nativeQuery = true)
     List<Object[]> obtenerCatalogoVentasRaw();
 }

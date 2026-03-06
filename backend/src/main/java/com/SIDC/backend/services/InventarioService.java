@@ -27,7 +27,7 @@ public class InventarioService {
     }
 
     // ==========================================
-    // READ: Dashboard (Ahora incluye el precio)
+    // READ: Dashboard (Lógica de Fechas Corregida)
     // ==========================================
     public List<InventarioResponseDTO> obtenerListadoInventario() {
         List<Object[]> resultados = existenciaRepository.obtenerInventarioCompleto();
@@ -41,14 +41,18 @@ public class InventarioService {
                 Integer stock = fila[5] != null ? ((Number) fila[5]).intValue() : 0;
                 LocalDate vencimiento = convertirAFuncionLocalDate(fila[6]);
 
-                // Lógica de estados
+                // 👇 Lógica de estados CORREGIDA
                 String estado = "Stock Óptimo";
                 long diasParaVencer = ChronoUnit.DAYS.between(hoy, vencimiento);
-                if (diasParaVencer <= 30 && diasParaVencer >= 0) estado = "Próximo a Vencer";
-                else if (diasParaVencer < 0) estado = "Vencido";
-                else if (stock <= 10) estado = "Bajo Stock";
 
-                // Extraemos el precio base (el nuevo campo en la posición 7)
+                if (diasParaVencer <= 0) {
+                    estado = "Vencido"; // Si vence hoy (0) o antes (<0)
+                } else if (diasParaVencer <= 30) {
+                    estado = "Próximo a Vencer"; // Entre 1 y 30 días
+                } else if (stock <= 10) {
+                    estado = "Bajo Stock";
+                }
+
                 BigDecimal precio = fila[7] != null ? new BigDecimal(fila[7].toString()) : BigDecimal.ZERO;
 
                 listado.add(new InventarioResponseDTO(
@@ -134,31 +138,26 @@ public class InventarioService {
     }
 
     // ==========================================
-    // UPDATE - Actualizar información Completa (Cero tolerancia a errores)
+    // UPDATE - Actualizar información Completa
     // ==========================================
     @Transactional
     public void actualizarProducto(Long idProducto, ProductoActualizarDTO dto) {
-
-        // 0. Validación estricta: Si falta el ID del lote o bodega, cortamos la ejecución de raíz.
         if (dto.idLote() == null || dto.idBodega() == null) {
             throw new RuntimeException("Error: El frontend no está enviando el idLote o el idBodega.");
         }
 
-        // 1. Actualizamos la tabla PRODUCTOS
         Producto producto = productoRepository.findById(idProducto)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         producto.setNombre(dto.nombreProducto());
         producto.setPrecioBase(dto.precio());
         productoRepository.save(producto);
 
-        // 2. Actualizamos la tabla LOTES (Ya sin el if condicional)
         Lote lote = loteRepository.findById(dto.idLote())
                 .orElseThrow(() -> new RuntimeException("Lote no encontrado"));
         lote.setCodigoLote(dto.codigoLote());
         lote.setFechaVencimiento(dto.fechaVencimiento());
         loteRepository.save(lote);
 
-        // 3. Actualizamos la tabla EXISTENCIAS (Ya sin el if condicional)
         ExistenciaId existenciaId = new ExistenciaId(dto.idBodega(), idProducto, dto.idLote());
         Existencia existencia = existenciaRepository.findById(existenciaId)
                 .orElseThrow(() -> new RuntimeException("Existencia no encontrada"));
